@@ -42,18 +42,18 @@
     <div class="glass rounded-2xl p-5 shadow-xl border border-slate-700/50">
       <div class="flex justify-between items-start mb-2">
         <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Disponibile Settimanale</span>
-        <button type="button" id="weeklyBudgetBadge" onclick="editWeeklyTarget()" class="text-xs font-bold px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-600 hover:bg-slate-700">Target 100,00 €</button>
+        <button type="button" id="weeklyBudgetBadge" onclick="editWeeklyTarget()" class="text-xs font-bold px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-600 hover:bg-slate-700">Target 0,00 €</button>
       </div>
       <div class="flex items-baseline gap-2 mb-3">
-        <span id="pocketRemaining" class="text-4xl font-extrabold text-emerald-400 tracking-tight">100,00 €</span>
+        <span id="pocketRemaining" class="text-4xl font-extrabold text-emerald-400 tracking-tight">0,00 €</span>
         <span class="text-xs text-slate-400 font-medium">rimanenti</span>
       </div>
       <div class="w-full bg-slate-800 h-3 rounded-full overflow-hidden p-0.5 border border-slate-700/60 mb-3">
-        <div id="pocketProgressBar" class="bg-emerald-500 h-full rounded-full transition-all duration-500 ease-out" style="width:100%"></div>
+        <div id="pocketProgressBar" class="bg-emerald-500 h-full rounded-full transition-all duration-500 ease-out" style="width:0%"></div>
       </div>
       <div class="flex justify-between items-center text-xs text-slate-400 pt-1 border-t border-slate-800">
         <span>Spesi: <strong id="pocketSpent" class="text-slate-200">0,00 €</strong></span>
-        <span>Totale Iniziale: <strong id="pocketInitial" class="text-slate-200">100,00 €</strong></span>
+        <span>Totale Iniziale: <strong id="pocketInitial" class="text-slate-200">0,00 €</strong></span>
       </div>
     </div>
 
@@ -126,7 +126,7 @@
       <div class="space-y-2 text-xs">
         <div class="flex justify-between text-slate-300"><span>Stipendio</span><span id="summaryIncome" class="font-semibold text-emerald-400">0,00 €</span></div>
         <div class="flex justify-between text-slate-300"><span>Spese Fisse</span><span id="summaryFixed" class="font-semibold text-sky-400">-0,00 €</span></div>
-        <div class="flex justify-between text-slate-300"><span>Pocket Money (4 sett.) <button type="button" onclick="editWeeklyTarget()" class="text-emerald-400 ml-1"><i class="fa-solid fa-pen text-10px"></i></button></span><span id="summaryPocket" class="font-semibold text-amber-400">-400,00 €</span></div>
+        <div class="flex justify-between text-slate-300"><span>Pocket Money (4 sett.) <button type="button" onclick="editWeeklyTarget()" class="text-emerald-400 ml-1"><i class="fa-solid fa-pen text-10px"></i></button></span><span id="summaryPocket" class="font-semibold text-amber-400">-0,00 €</span></div>
         <div class="flex justify-between text-slate-300"><span>Spese Extra</span><span id="summaryExtra" class="font-semibold text-rose-400">-0,00 €</span></div>
         <div class="pt-3 border-t border-slate-700/80 flex justify-between items-end">
           <div>
@@ -206,7 +206,7 @@
       </div>
     </div>
     <div class="bg-slate-900/80 p-3.5 rounded-xl border border-slate-800 space-y-2">
-      <div class="flex justify-between text-xs"><span class="text-slate-400">Budget Settimanale</span><span id="modalInitial" class="font-bold text-slate-200">100,00 €</span></div>
+      <div class="flex justify-between text-xs"><span class="text-slate-400">Budget Settimanale</span><span id="modalInitial" class="font-bold text-slate-200">0,00 €</span></div>
       <div class="flex justify-between text-xs"><span class="text-slate-400">Spese Totali Effettuate</span><span id="modalSpent" class="font-bold text-rose-400">0,00 €</span></div>
       <div class="flex justify-between text-xs pt-2 border-t border-slate-800"><span class="text-slate-200 font-bold">Avanzo Rimanente</span><span id="modalLeftover" class="font-extrabold text-emerald-400 text-sm">0,00 €</span></div>
     </div>
@@ -240,7 +240,7 @@
   var NAV_OFF = 'nav-btn flex flex-col items-center py-1.5 px-2 rounded-xl text-slate-400 hover:text-slate-200 transition';
   var MAX_BANK_POINTS = 500;
   var MONTHS = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
-  var DEFAULT_WEEKLY_TARGET = 100;
+  var DEFAULT_WEEKLY_TARGET = 0;
 
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
   function round2(n) { return Math.round(n * 100) / 100; }
@@ -473,7 +473,7 @@
 
   function editWeeklyTarget() {
     var v = parseNum(prompt('Nuovo pocket money settimanale (€):', appData.weeklyTarget));
-    if (isNaN(v) || v <= 0) return;
+    if (isNaN(v) || v < 0) return;
     v = round2(v);
     var spent = sum(appData.currentWeek.expenses);
     var applyNow = confirm('Impostare ' + eur(v) + ' anche per la settimana in corso?\n\nOK = sì, subito (spesi finora: ' + eur(spent) + ')\nAnnulla = solo dalla prossima settimana');
@@ -495,6 +495,7 @@
     remEl.textContent = eur(remaining);
     bar.style.width = pct + '%';
     var color = pct > 50 ? 'emerald' : (pct > 20 ? 'amber' : 'rose');
+    if (w.initialBudget <= 0 && remaining >= 0) color = 'emerald';
     remEl.className = 'text-4xl font-extrabold tracking-tight ' + { emerald: 'text-emerald-400', amber: 'text-amber-400', rose: 'text-rose-500' }[color];
     bar.className = { emerald: 'bg-emerald-500', amber: 'bg-amber-500', rose: 'bg-rose-500' }[color] + ' h-full rounded-full transition-all duration-500 ease-out';
 
