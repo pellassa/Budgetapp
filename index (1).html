@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="it" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Budget Completo</title>
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0f172a">
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<style>
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background-color:#0f172a;color:#f8fafc;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+  input{-webkit-user-select:text;user-select:text}
+  .glass{background:rgba(30,41,59,.75);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.08)}
+  .glass-card{background:rgba(30,41,59,.5);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.05)}
+  ::-webkit-scrollbar{width:4px}
+  ::-webkit-scrollbar-track{background:rgba(15,23,42,.6)}
+  ::-webkit-scrollbar-thumb{background:rgba(51,65,85,.8);border-radius:4px}
+  .hidden{display:none !important}
+  .text-10px{font-size:10px}.text-11px{font-size:11px}
+</style>
+</head>
+<body class="min-h-screen pb-24 text-slate-100 flex flex-col justify-between">
+
+<header class="glass sticky top-0 z-40 px-5 py-4 border-b border-slate-800 flex items-center justify-between">
+  <div class="flex items-center gap-3">
+    <div class="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400"><i class="fa-solid fa-wallet text-lg"></i></div>
+    <div>
+      <h1 class="font-bold text-base tracking-tight text-white leading-none">Budget Completo</h1>
+      <p class="text-11px text-slate-400 font-medium mt-0.5" id="headerDateRange">Ciclo Settimanale</p>
+    </div>
+  </div>
+  <button type="button" onclick="openResetModal()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-600 px-3 py-1.5 rounded-lg text-slate-300 font-medium transition flex items-center gap-1.5">
+    <i class="fa-solid fa-arrows-rotate text-emerald-400"></i> Reset Domenica
+  </button>
+</header>
+
+<main class="max-w-md mx-auto w-full px-4 pt-4 flex-1">
+
+  <div id="tab-pocket" class="space-y-4">
+    <div class="glass rounded-2xl p-5 shadow-xl border border-slate-700/50">
+      <div class="flex justify-between items-start mb-2">
+        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Disponibile Settimanale</span>
+        <button type="button" id="weeklyBudgetBadge" onclick="editWeeklyTarget()" class="text-xs font-bold px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-600 hover:bg-slate-700">Target 100,00 €</button>
+      </div>
+      <div class="flex items-baseline gap-2 mb-3">
+        <span id="pocketRemaining" class="text-4xl font-extrabold text-emerald-400 tracking-tight">100,00 €</span>
+        <span class="text-xs text-slate-400 font-medium">rimanenti</span>
+      </div>
+      <div class="w-full bg-slate-800 h-3 rounded-full overflow-hidden p-0.5 border border-slate-700/60 mb-3">
+        <div id="pocketProgressBar" class="bg-emerald-500 h-full rounded-full transition-all duration-500 ease-out" style="width:100%"></div>
+      </div>
+      <div class="flex justify-between items-center text-xs text-slate-400 pt-1 border-t border-slate-800">
+        <span>Spesi: <strong id="pocketSpent" class="text-slate-200">0,00 €</strong></span>
+        <span>Totale Iniziale: <strong id="pocketInitial" class="text-slate-200">100,00 €</strong></span>
+      </div>
+    </div>
+
+    <div class="glass rounded-2xl p-4 shadow-lg">
+      <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2"><i class="fa-solid fa-plus-circle text-emerald-400"></i> Nuova Spesa Rapida</h3>
+      <form id="addExpenseForm" class="space-y-3">
+        <div class="grid grid-cols-2 gap-2">
+          <input type="text" id="expenseTitle" placeholder="Cosa hai comprato?" required class="bg-slate-900/80 border border-slate-700/80 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 placeholder-slate-500">
+          <input type="number" id="expenseAmount" step="0.01" placeholder="Importo" required class="bg-slate-900/80 border border-slate-700/80 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 placeholder-slate-500">
+        </div>
+        <div class="grid grid-cols-5 gap-1.5" id="categorySelector">
+          <button type="button" data-cat="Spesa" class="cat-btn"><i class="fa-solid fa-cart-shopping text-sm"></i><span class="text-10px font-medium">Spesa</span></button>
+          <button type="button" data-cat="Benzina" class="cat-btn"><i class="fa-solid fa-gas-pump text-sm"></i><span class="text-10px font-medium">Benzina</span></button>
+          <button type="button" data-cat="Caffè" class="cat-btn"><i class="fa-solid fa-mug-hot text-sm"></i><span class="text-10px font-medium">Caffè</span></button>
+          <button type="button" data-cat="Svago" class="cat-btn"><i class="fa-solid fa-utensils text-sm"></i><span class="text-10px font-medium">Svago</span></button>
+          <button type="button" data-cat="Altro" class="cat-btn"><i class="fa-solid fa-ellipsis text-sm"></i><span class="text-10px font-medium">Altro</span></button>
+        </div>
+        <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-slate-950 font-bold py-2.5 rounded-xl text-sm transition shadow-lg shadow-emerald-500/10 flex items-center justify-center gap-2"><i class="fa-solid fa-check"></i> Registra Spesa</button>
+        <p class="text-10px text-slate-500 text-center">La spesa viene sottratta automaticamente dal saldo del conto.</p>
+      </form>
+    </div>
+
+    <div class="glass rounded-2xl p-4 shadow-lg">
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-list-ul text-emerald-400"></i> Movimenti Settimana</h3>
+        <span id="expenseCount" class="text-11px text-slate-400 font-medium">0 transazioni</span>
+      </div>
+      <div id="weeklyTransactionsList" class="space-y-2 max-h-64 overflow-y-auto pr-1"></div>
+    </div>
+  </div>
+
+  <div id="tab-monthly" class="hidden space-y-4">
+    <div class="glass rounded-2xl p-4 shadow-lg">
+      <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2"><i class="fa-solid fa-money-bill-wave text-emerald-400 mr-1"></i> Stipendio Netto Mensile</label>
+      <input type="number" id="monthlyIncomeInput" step="0.01" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-4 py-3 text-xl font-bold text-emerald-400 focus:outline-none focus:border-emerald-500">
+    </div>
+
+    <div class="glass rounded-2xl p-4 shadow-lg">
+      <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2"><i class="fa-solid fa-chart-pie text-emerald-400"></i> Come si divide lo stipendio</h3>
+      <div class="flex items-center gap-4">
+        <div class="relative w-32 h-32 shrink-0">
+          <svg viewBox="0 0 100 100" class="w-32 h-32 -rotate-90" id="donutSvg"></svg>
+          <div class="absolute inset-0 flex flex-col items-center justify-center">
+            <span id="donutCenterValue" class="text-sm font-black text-white">0%</span>
+            <span class="text-10px text-slate-400">risparmio</span>
+          </div>
+        </div>
+        <div id="donutLegend" class="space-y-1.5 text-11px flex-1"></div>
+      </div>
+    </div>
+
+    <div class="glass rounded-2xl p-4 shadow-lg">
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-file-invoice-dollar text-sky-400"></i> Spese Fisse Ricorrenti</h3>
+        <button type="button" onclick="promptAddFixedExpense()" class="text-11px bg-sky-500/20 text-sky-300 border border-sky-500/30 px-2.5 py-1 rounded-lg hover:bg-sky-500/30 transition">Aggiungi</button>
+      </div>
+      <div id="fixedExpensesList" class="space-y-2"></div>
+    </div>
+
+    <div class="glass rounded-2xl p-4 shadow-lg">
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-plane text-amber-400"></i> Spese Extra Mese</h3>
+        <button type="button" onclick="promptAddExtraExpense()" class="text-11px bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-lg hover:bg-amber-500/30 transition">Extra</button>
+      </div>
+      <div id="extraExpensesList" class="space-y-2"></div>
+    </div>
+
+    <div class="glass rounded-2xl p-5 shadow-xl border-t-4 border-t-emerald-500">
+      <h3 class="text-sm font-bold text-white mb-3">Previsione Risparmio Mese</h3>
+      <div class="space-y-2 text-xs">
+        <div class="flex justify-between text-slate-300"><span>Stipendio</span><span id="summaryIncome" class="font-semibold text-emerald-400">0,00 €</span></div>
+        <div class="flex justify-between text-slate-300"><span>Spese Fisse</span><span id="summaryFixed" class="font-semibold text-sky-400">-0,00 €</span></div>
+        <div class="flex justify-between text-slate-300"><span>Pocket Money (4 sett.) <button type="button" onclick="editWeeklyTarget()" class="text-emerald-400 ml-1"><i class="fa-solid fa-pen text-10px"></i></button></span><span id="summaryPocket" class="font-semibold text-amber-400">-400,00 €</span></div>
+        <div class="flex justify-between text-slate-300"><span>Spese Extra</span><span id="summaryExtra" class="font-semibold text-rose-400">-0,00 €</span></div>
+        <div class="pt-3 border-t border-slate-700/80 flex justify-between items-end">
+          <div>
+            <span class="text-slate-400 block text-10px uppercase font-bold tracking-wider">Risparmio Netto Stimato</span>
+            <span id="summarySavings" class="text-2xl font-black text-emerald-400">0,00 €</span>
+          </div>
+          <span id="summarySavingsRate" class="text-11px font-semibold text-slate-400 bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-700">0% dello stipendio</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-condo" class="hidden space-y-4">
+    <div class="glass rounded-2xl p-5 shadow-lg">
+      <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2"><i class="fa-solid fa-building-columns text-sky-400 mr-1"></i> Saldo Attuale Conto Corrente</label>
+      <input type="number" id="bankBalanceInput" step="0.01" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-4 py-3 text-2xl font-black text-white focus:outline-none focus:border-sky-500">
+      <p class="text-10px text-slate-500 mt-2">Si aggiorna da solo con le spese pocket. Puoi correggerlo a mano quando vuoi: la modifica viene registrata nel grafico.</p>
+      <div class="grid grid-cols-2 gap-2 mt-3">
+        <button type="button" onclick="addBankMovement(1)" class="bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 font-semibold py-2 rounded-xl text-xs transition"><i class="fa-solid fa-arrow-down mr-1"></i> Entrata</button>
+        <button type="button" onclick="addBankMovement(-1)" class="bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 font-semibold py-2 rounded-xl text-xs transition"><i class="fa-solid fa-arrow-up mr-1"></i> Uscita</button>
+      </div>
+    </div>
+
+    <div class="glass rounded-2xl p-4 shadow-lg">
+      <div class="flex justify-between items-center mb-1">
+        <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-chart-line text-sky-400"></i> Andamento del conto</h3>
+        <span id="bankTrend" class="text-11px font-semibold text-slate-400"></span>
+      </div>
+      <div id="bankChart"></div>
+    </div>
+
+    <div class="glass rounded-2xl p-4 shadow-lg">
+      <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2"><i class="fa-solid fa-clock-rotate-left text-slate-400"></i> Ultimi movimenti conto</h3>
+      <div id="bankMovements" class="space-y-2 max-h-64 overflow-y-auto pr-1"></div>
+    </div>
+  </div>
+
+  <div id="tab-archive" class="hidden space-y-4">
+    <div class="glass rounded-2xl p-5 shadow-lg border-l-4 border-l-emerald-500">
+      <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Risparmi Accumulati da Leftover</p>
+      <div class="flex items-baseline gap-2">
+        <span id="accumulatedSavings" class="text-3xl font-black text-emerald-400">0,00 €</span>
+        <span class="text-xs text-slate-400">messi da parte</span>
+      </div>
+    </div>
+
+    <div class="glass rounded-2xl p-4 shadow-lg">
+      <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2"><i class="fa-solid fa-chart-column text-emerald-400"></i> Ultime settimane</h3>
+      <div id="weeksChart"></div>
+    </div>
+
+    <div class="glass rounded-2xl p-4 shadow-lg">
+      <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2"><i class="fa-solid fa-box-archive text-amber-400"></i> Storico Settimane Chiuse</h3>
+      <div id="historicalWeeksList" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
+    </div>
+
+    <div class="glass rounded-2xl p-4 shadow-lg">
+      <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2"><i class="fa-solid fa-database text-slate-400"></i> Gestione Dati Locale</h3>
+      <div class="grid grid-cols-2 gap-2">
+        <button type="button" onclick="exportDataJSON()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2 rounded-xl text-xs border border-slate-700 transition flex items-center justify-center gap-1.5"><i class="fa-solid fa-download"></i> Esporta JSON</button>
+        <label class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2 rounded-xl text-xs border border-slate-700 transition flex items-center justify-center gap-1.5 cursor-pointer"><i class="fa-solid fa-upload"></i> Importa JSON
+          <input type="file" id="importFileInput" accept=".json" class="hidden">
+        </label>
+      </div>
+      <button type="button" onclick="confirmFullReset()" class="w-full mt-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 font-semibold py-2 rounded-xl text-xs transition">Ripristina Configurazione Iniziale</button>
+    </div>
+  </div>
+</main>
+
+<div id="resetModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+  <div class="glass max-w-sm w-full rounded-2xl p-5 shadow-2xl border border-slate-700 space-y-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400"><i class="fa-solid fa-calendar-check text-xl"></i></div>
+      <div>
+        <h3 class="font-bold text-white text-base">Chiusura Domenica</h3>
+        <p class="text-xs text-slate-400">Reset ciclo e trasferimento avanzo</p>
+      </div>
+    </div>
+    <div class="bg-slate-900/80 p-3.5 rounded-xl border border-slate-800 space-y-2">
+      <div class="flex justify-between text-xs"><span class="text-slate-400">Budget Settimanale</span><span id="modalInitial" class="font-bold text-slate-200">100,00 €</span></div>
+      <div class="flex justify-between text-xs"><span class="text-slate-400">Spese Totali Effettuate</span><span id="modalSpent" class="font-bold text-rose-400">0,00 €</span></div>
+      <div class="flex justify-between text-xs pt-2 border-t border-slate-800"><span class="text-slate-200 font-bold">Avanzo Rimanente</span><span id="modalLeftover" class="font-extrabold text-emerald-400 text-sm">0,00 €</span></div>
+    </div>
+    <p class="text-11px text-slate-400 leading-tight">L'avanzo verrà archiviato nel fondo risparmio e il pocket money ripristinato per la nuova settimana. Il saldo del conto non cambia.</p>
+    <div class="flex gap-2 pt-2">
+      <button type="button" onclick="closeResetModal()" class="w-1/2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-2.5 rounded-xl text-xs transition">Annulla</button>
+      <button type="button" onclick="executeSundayReset()" class="w-1/2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold py-2.5 rounded-xl text-xs transition shadow-lg shadow-emerald-500/20">Conferma Reset</button>
+    </div>
+  </div>
+</div>
+
+<nav class="glass fixed bottom-0 left-0 right-0 z-40 border-t border-slate-800 px-2 py-2">
+  <div class="max-w-md mx-auto grid grid-cols-4 gap-1">
+    <button type="button" id="nav-pocket" data-tab="pocket" class="nav-btn flex flex-col items-center py-1.5 px-2 rounded-xl transition"><i class="fa-solid fa-coins text-base mb-1"></i><span class="text-10px font-semibold">Pocket</span></button>
+    <button type="button" id="nav-monthly" data-tab="monthly" class="nav-btn flex flex-col items-center py-1.5 px-2 rounded-xl transition"><i class="fa-solid fa-chart-pie text-base mb-1"></i><span class="text-10px font-semibold">Mese</span></button>
+    <button type="button" id="nav-condo" data-tab="condo" class="nav-btn flex flex-col items-center py-1.5 px-2 rounded-xl transition"><i class="fa-solid fa-building-columns text-base mb-1"></i><span class="text-10px font-semibold">Conto</span></button>
+    <button type="button" id="nav-archive" data-tab="archive" class="nav-btn flex flex-col items-center py-1.5 px-2 rounded-xl transition"><i class="fa-solid fa-box-archive text-base mb-1"></i><span class="text-10px font-semibold">Archivio</span></button>
+  </div>
+</nav>
+
+<script>
+(function () {
+  'use strict';
+
+  var STORAGE_KEY = 'userbudgetpwadata';
+  var TABS = ['pocket', 'monthly', 'condo', 'archive'];
+  var CAT_ICONS = { 'Spesa': 'fa-cart-shopping', 'Benzina': 'fa-gas-pump', 'Caffè': 'fa-mug-hot', 'Svago': 'fa-utensils', 'Altro': 'fa-ellipsis' };
+  var CAT_ON  = 'cat-btn active bg-emerald-500/20 border border-emerald-500/50 text-emerald-300 p-2 rounded-xl text-center flex flex-col items-center gap-1 transition';
+  var CAT_OFF = 'cat-btn bg-slate-800 border border-slate-700 text-slate-400 p-2 rounded-xl text-center flex flex-col items-center gap-1 transition';
+  var NAV_ON  = 'nav-btn active flex flex-col items-center py-1.5 px-2 rounded-xl text-emerald-400 transition';
+  var NAV_OFF = 'nav-btn flex flex-col items-center py-1.5 px-2 rounded-xl text-slate-400 hover:text-slate-200 transition';
+  var MAX_BANK_POINTS = 500;
+
+  var DEFAULT_DATA = {
+    bankBalance: 12536.96,
+    bankHistory: [
+      { t: new Date(2026, 8, 28, 8, 0).getTime(), balance: 12536.96, delta: 0, note: 'Saldo iniziale' }
+    ],
+    monthlyIncome: 2197.00,
+    accumulatedSavingsFromLeftovers: 14.59,
+    weeklyTarget: 100.00,
+    currentCategory: 'Spesa',
+    currentWeek: {
+      startDate: '28 Set 2026',
+      endDate: '04 Ott 2026',
+      initialBudget: 100.00,
+      expenses: [
+        { id: 1, title: 'Quota Macchinetta Caffè', amount: 20.00, category: 'Caffè', date: '28/09/2026' },
+        { id: 2, title: 'Benzina Auto', amount: 30.00, category: 'Benzina', date: '28/09/2026' }
+      ]
+    },
+    fixedExpenses: [
+      { id: 1, name: 'Prestito Toyota', amount: 340.68 },
+      { id: 2, name: 'Prestito Findomestic', amount: 271.70 },
+      { id: 3, name: 'AcomeA Fondo Pensione', amount: 106.00 },
+      { id: 4, name: 'Abbonamenti Digitali', amount: 60.00 },
+      { id: 5, name: 'Bolletta Gas', amount: 41.48 }
+    ],
+    extraExpenses: [],
+    historicalWeeks: [
+      { startDate: '25 Set 2026', endDate: '27 Set 2026', spent: 25.41, leftover: 14.59, status: 'Risparmiati' }
+    ]
+  };
+
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+  function round2(n) { return Math.round(n * 100) / 100; }
+
+  function normalize(d) {
+    var base = clone(DEFAULT_DATA);
+    if (!d || typeof d !== 'object') return base;
+    var hadHistory = Array.isArray(d.bankHistory) && d.bankHistory.length > 0;
+    for (var k in base) { if (d[k] === undefined || d[k] === null) d[k] = base[k]; }
+    if (!d.currentWeek || typeof d.currentWeek !== 'object') d.currentWeek = base.currentWeek;
+    if (!Array.isArray(d.currentWeek.expenses)) d.currentWeek.expenses = [];
+    if (typeof d.currentWeek.initialBudget !== 'number') d.currentWeek.initialBudget = d.weeklyTarget;
+    ['fixedExpenses', 'extraExpenses', 'historicalWeeks'].forEach(function (key) {
+      if (!Array.isArray(d[key])) d[key] = [];
+    });
+    d.bankBalance = parseFloat(d.bankBalance) || 0;
+    if (!hadHistory) {
+      d.bankHistory = [{ t: Date.now(), balance: round2(d.bankBalance), delta: 0, note: 'Saldo iniziale' }];
+    }
+    return d;
+  }
+
+  function loadData() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      return normalize(raw ? JSON.parse(raw) : null);
+    } catch (e) { return clone(DEFAULT_DATA); }
+  }
+
+  var appData = loadData();
+
+  function saveData() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(appData)); } catch (e) {}
+    renderAll();
+  }
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function eur(n) { return Number(n || 0).toFixed(2).replace('.', ',') + ' €'; }
+  function eurSigned(n) { return (n >= 0 ? '+' : '-') + eur(Math.abs(n)); }
+  function sum(arr) { return arr.reduce(function (a, i) { return a + (Number(i.amount) || 0); }, 0); }
+  function byId(id) { return document.getElementById(id); }
+  function parseNum(v) { return parseFloat(String(v).replace(',', '.')); }
+  function fmtShort(t) { return new Date(t).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' }); }
+  function fmtFull(t) {
+    var d = new Date(t);
+    return d.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' }) + ' ' +
+      d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function pushBankPoint(note, delta) {
+    appData.bankHistory.push({ t: Date.now(), balance: round2(appData.bankBalance), delta: round2(delta), note: note });
+    if (appData.bankHistory.length > MAX_BANK_POINTS) {
+      appData.bankHistory = appData.bankHistory.slice(-MAX_BANK_POINTS);
+    }
+  }
+  function adjustBank(delta, note) {
+    appData.bankBalance = round2((parseFloat(appData.bankBalance) || 0) + delta);
+    pushBankPoint(note, delta);
+  }
+
+  function setBankManually(newVal) {
+    var old = parseFloat(appData.bankBalance) || 0;
+    newVal = round2(newVal);
+    var delta = round2(newVal - old);
+    if (delta === 0) return;
+    appData.bankBalance = newVal;
+    pushBankPoint('Modifica manuale', delta);
+    saveData();
+  }
+
+  function addBankMovement(sign) {
+    var amount = parseNum(prompt(sign > 0 ? 'Importo entrata (€):' : 'Importo uscita (€):'));
+    if (isNaN(amount) || amount <= 0) return;
+    var note = prompt('Descrizione:', sign > 0 ? 'Entrata' : 'Uscita');
+    if (note === null) return;
+    adjustBank(sign * amount, note.trim() || (sign > 0 ? 'Entrata' : 'Uscita'));
+    saveData();
+  }
+
+  function renderBankChart() {
+    var el = byId('bankChart');
+    var pts = appData.bankHistory.slice(-40);
+    if (pts.length < 2) {
+      el.innerHTML = '<p class="text-xs text-slate-500 text-center py-6">Il grafico apparirà dopo il primo movimento sul conto.</p>';
+      byId('bankTrend').textContent = '';
+      return;
+    }
+    var W = 300, H = 150, pl = 6, pr = 6, pt = 18, pb = 20;
+    var vals = pts.map(function (p) { return p.balance; });
+    var min = Math.min.apply(null, vals), max = Math.max.apply(null, vals);
+    if (max === min) { max += 1; min -= 1; }
+    var m = (max - min) * 0.12; min -= m; max += m;
+    var n = pts.length;
+    function X(i) { return pl + i * (W - pl - pr) / (n - 1); }
+    function Y(v) { return pt + (1 - (v - min) / (max - min)) * (H - pt - pb); }
+
+    var first = vals[0], last = vals[n - 1];
+    var col = last >= first ? '#34d399' : '#fb7185';
+
+    var line = pts.map(function (p, i) { return (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(p.balance).toFixed(1); }).join(' ');
+    var area = line + ' L' + X(n - 1).toFixed(1) + ' ' + (H - pb) + ' L' + X(0).toFixed(1) + ' ' + (H - pb) + ' Z';
+
+    var vmin = Math.min.apply(null, vals), vmax = Math.max.apply(null, vals);
+    var iMin = vals.indexOf(vmin), iMax = vals.indexOf(vmax);
+    function label(i, v, above) {
+      var x = X(i), anchor = x < 60 ? 'start' : (x > W - 60 ? 'end' : 'middle');
+      return '<text x="' + x.toFixed(1) + '" y="' + (Y(v) + (above ? -6 : 12)).toFixed(1) + '" text-anchor="' + anchor + '" fill="#94a3b8" font-size="8">' + Math.round(v) + ' €</text>';
+    }
+    var dots = pts.map(function (p, i) {
+      return '<circle cx="' + X(i).toFixed(1) + '" cy="' + Y(p.balance).toFixed(1) + '" r="' + (i === n - 1 ? 3.5 : 1.8) + '" fill="' + col + '"></circle>';
+    }).join('');
+
+    el.innerHTML =
+      '<svg viewBox="0 0 ' + W + ' ' + H + '" class="w-full" style="height:auto">' +
+        '<defs><linearGradient id="bankGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="' + col + '" stop-opacity="0.35"></stop><stop offset="100%" stop-color="' + col + '" stop-opacity="0"></stop></linearGradient></defs>' +
+        '<line x1="' + pl + '" y1="' + (H - pb) + '" x2="' + (W - pr) + '" y2="' + (H - pb) + '" stroke="#334155" stroke-width="0.6"></line>' +
+        '<path d="' + area + '" fill="url(#bankGrad)"></path>' +
+        '<path d="' + line + '" fill="none" stroke="' + col + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></path>' +
+        dots + label(iMax, vmax, true) + (iMin !== iMax ? label(iMin, vmin, false) : '') +
+        '<text x="' + pl + '" y="' + (H - 6) + '" fill="#64748b" font-size="8">' + fmtShort(pts[0].t) + '</text>' +
+        '<text x="' + (W - pr) + '" y="' + (H - 6) + '" text-anchor="end" fill="#64748b" font-size="8">' + fmtShort(pts[n - 1].t) + '</text>' +
+      '</svg>';
+
+    var diff = round2(last - first);
+    var tr = byId('bankTrend');
+    tr.textContent = eurSigned(diff);
+    tr.className = 'text-11px font-semibold ' + (diff >= 0 ? 'text-emerald-400' : 'text-rose-400');
+  }
+
+  function renderBankMovements() {
+    var el = byId('bankMovements');
+    var list = appData.bankHistory.slice(-15).reverse();
+    el.innerHTML = list.map(function (p) {
+      var d = p.delta || 0;
+      var cls = d > 0 ? 'text-emerald-400' : (d < 0 ? 'text-rose-400' : 'text-slate-400');
+      return '<div class="glass-card rounded-xl px-3 py-2 flex items-center justify-between border border-slate-800">' +
+        '<div class="min-w-0"><p class="text-xs font-medium text-slate-200 truncate">' + esc(p.note) + '</p>' +
+        '<p class="text-10px text-slate-500">' + fmtFull(p.t) + '</p></div>' +
+        '<div class="text-right shrink-0 pl-2"><p class="text-xs font-bold ' + cls + '">' + (d === 0 ? '—' : eurSigned(d)) + '</p>' +
+        '<p class="text-10px text-slate-500">' + eur(p.balance) + '</p></div></div>';
+    }).join('');
+  }
+
+  function renderCondoTab() {
+    var inp = byId('bankBalanceInput');
+    if (document.activeElement !== inp) inp.value = round2(appData.bankBalance);
+    renderBankChart();
+    renderBankMovements();
+  }
+
+  function switchTab(tabId) {
+    TABS.forEach(function (id) {
+      var t = byId('tab-' + id), b = byId('nav-' + id);
+      if (t) t.classList.add('hidden');
+      if (b) b.className = NAV_OFF;
+    });
+    var tab = byId('tab-' + tabId), btn = byId('nav-' + tabId);
+    if (tab) tab.classList.remove('hidden');
+    if (btn) btn.className = NAV_ON;
+    try { sessionStorage.setItem('activeTab', tabId); } catch (e) {}
+    window.scrollTo(0, 0);
+  }
+
+  function selectCategory(cat) {
+    appData.currentCategory = cat;
+    document.querySelectorAll('.cat-btn').forEach(function (b) {
+      b.className = (b.getAttribute('data-cat') === cat) ? CAT_ON : CAT_OFF;
+    });
+  }
+
+  function handleAddExpense(e) {
+    e.preventDefault();
+    var titleEl = byId('expenseTitle'), amountEl = byId('expenseAmount');
+    var title = titleEl.value.trim();
+    var amount = parseNum(amountEl.value);
+    if (!title || isNaN(amount) || amount <= 0) return;
+    appData.currentWeek.expenses.unshift({
+      id: Date.now(), title: title, amount: amount,
+      category: appData.currentCategory || 'Spesa',
+      date: new Date().toLocaleDateString('it-IT')
+    });
+    adjustBank(-amount, 'Spesa: ' + title);
+    titleEl.value = ''; amountEl.value = '';
+    saveData();
+  }
+
+  function deleteWeeklyExpense(id) {
+    var exp = appData.currentWeek.expenses.filter(function (x) { return x.id === id; })[0];
+    if (!exp) return;
+    appData.currentWeek.expenses = appData.currentWeek.expenses.filter(function (x) { return x.id !== id; });
+    adjustBank(exp.amount, 'Annullata: ' + exp.title);
+    saveData();
+  }
+
+  function editWeeklyTarget() {
+    var v = parseNum(prompt('Nuovo pocket money settimanale (€):', appData.weeklyTarget));
+    if (isNaN(v) || v <= 0) return;
+    v = round2(v);
+    var spent = sum(appData.currentWeek.expenses);
+    var applyNow = confirm('Impostare ' + eur(v) + ' anche per la settimana in corso?\n\nOK = sì, subito (spesi finora: ' + eur(spent) + ')\nAnnulla = solo dalla prossima settimana');
+    appData.weeklyTarget = v;
+    if (applyNow) appData.currentWeek.initialBudget = v;
+    saveData();
+  }
+
+  function renderPocketTab() {
+    var w = appData.currentWeek;
+    var spent = sum(w.expenses);
+    var remaining = w.initialBudget - spent;
+    var pct = w.initialBudget > 0 ? Math.max(0, Math.min(100, (remaining / w.initialBudget) * 100)) : 0;
+
+    byId('headerDateRange').textContent = 'Ciclo ' + w.startDate + ' - ' + w.endDate;
+    byId('weeklyBudgetBadge').innerHTML = 'Target ' + eur(appData.weeklyTarget) + ' <i class="fa-solid fa-pen text-10px text-emerald-400 ml-1"></i>';
+
+    var remEl = byId('pocketRemaining'), bar = byId('pocketProgressBar');
+    remEl.textContent = eur(remaining);
+    bar.style.width = pct + '%';
+    var color = pct > 50 ? 'emerald' : (pct > 20 ? 'amber' : 'rose');
+    remEl.className = 'text-4xl font-extrabold tracking-tight ' + { emerald: 'text-emerald-400', amber: 'text-amber-400', rose: 'text-rose-500' }[color];
+    bar.className = { emerald: 'bg-emerald-500', amber: 'bg-amber-500', rose: 'bg-rose-500' }[color] + ' h-full rounded-full transition-all duration-500 ease-out';
+
+    byId('pocketSpent').textContent = eur(spent);
+    byId('pocketInitial').textContent = eur(w.initialBudget);
+    byId('expenseCount').textContent = w.expenses.length + (w.expenses.length === 1 ? ' transazione' : ' transazioni');
+
+    var list = byId('weeklyTransactionsList');
+    if (!w.expenses.length) {
+      list.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">Nessuna spesa registrata in questa settimana.</p>';
+      return;
+    }
+    list.innerHTML = w.expenses.map(function (x) {
+      var icon = CAT_ICONS[x.category] || 'fa-cart-shopping';
+      return '<div class="glass-card rounded-xl p-3 flex items-center justify-between border border-slate-800">' +
+        '<div class="flex items-center gap-3">' +
+          '<div class="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300 text-xs"><i class="fa-solid ' + icon + '"></i></div>' +
+          '<div><p class="text-xs font-bold text-slate-200">' + esc(x.title) + '</p>' +
+          '<p class="text-10px text-slate-400">' + esc(x.category) + ' • ' + esc(x.date) + '</p></div>' +
+        '</div>' +
+        '<div class="flex items-center gap-3">' +
+          '<span class="text-xs font-black text-rose-400">-' + eur(x.amount) + '</span>' +
+          '<button type="button" data-del-week="' + x.id + '" class="text-slate-500 hover:text-rose-400 text-xs p-1"><i class="fa-solid fa-xmark"></i></button>' +
+        '</div></div>';
+    }).join('');
+  }
+
+  function renderDonut(income, fixed, pocket, extra, net) {
+    var svg = byId('donutSvg'), legend = byId('donutLegend');
+    var segs = [
+      { label: 'Spese fisse', val: fixed, color: '#38bdf8' },
+      { label: 'Pocket money', val: pocket, color: '#fbbf24' },
+      { label: 'Extra', val: extra, color: '#fb7185' },
+      { label: 'Risparmio', val: Math.max(0, net), color: '#34d399' }
+    ];
+    var total = segs.reduce(function (a, s) { return a + s.val; }, 0);
+    var r = 40, C = 2 * Math.PI * r, offset = 0;
+    var html = '<circle cx="50" cy="50" r="' + r + '" fill="none" stroke="#1e293b" stroke-width="14"></circle>';
+    if (total > 0) {
+      segs.forEach(function (s) {
+        if (s.val <= 0) return;
+        var len = (s.val / total) * C;
+        html += '<circle cx="50" cy="50" r="' + r + '" fill="none" stroke="' + s.color + '" stroke-width="14" ' +
+          'stroke-dasharray="' + len.toFixed(2) + ' ' + (C - len).toFixed(2) + '" stroke-dashoffset="' + (-offset).toFixed(2) + '"></circle>';
+        offset += len;
+      });
+    }
+    svg.innerHTML = html;
+    byId('donutCenterValue').textContent = (income > 0 ? Math.round((net / income) * 100) : 0) + '%';
+    legend.innerHTML = segs.map(function (s) {
+      var p = total > 0 ? Math.round((s.val / total) * 100) : 0;
+      return '<div class="flex items-center justify-between gap-2"><span class="flex items-center gap-1.5 text-slate-300">' +
+        '<span class="inline-block w-2.5 h-2.5 rounded-full" style="background:' + s.color + '"></span>' + s.label + '</span>' +
+        '<span class="text-slate-400">' + p + '% · ' + eur(s.val) + '</span></div>';
+    }).join('') + (net < 0 ? '<p class="text-10px text-rose-400 pt-1">Attenzione: le uscite superano lo stipendio di ' + eur(-net) + '</p>' : '');
+  }
+
+  function renderMonthlyTab() {
+    var inp = byId('monthlyIncomeInput');
+    if (document.activeElement !== inp) inp.value = appData.monthlyIncome;
+
+    byId('fixedExpensesList').innerHTML = appData.fixedExpenses.map(function (x) {
+      return '<div class="glass-card rounded-xl px-3 py-2 flex items-center justify-between border border-slate-800">' +
+        '<span class="text-xs font-medium text-slate-300">' + esc(x.name) + '</span>' +
+        '<div class="flex items-center gap-2"><span class="text-xs font-bold text-sky-300">-' + eur(x.amount) + '</span>' +
+        '<button type="button" data-del-fixed="' + x.id + '" class="text-slate-500 hover:text-rose-400 text-xs"><i class="fa-solid fa-trash"></i></button></div></div>';
+    }).join('');
+
+    var extraEl = byId('extraExpensesList');
+    if (!appData.extraExpenses.length) {
+      extraEl.innerHTML = '<p class="text-11px text-slate-500 italic">Nessuna spesa extra mensile programmata.</p>';
+    } else {
+      extraEl.innerHTML = appData.extraExpenses.map(function (x) {
+        return '<div class="glass-card rounded-xl px-3 py-2 flex items-center justify-between border border-slate-800">' +
+          '<span class="text-xs font-medium text-amber-200">' + esc(x.name) + '</span>' +
+          '<div class="flex items-center gap-2"><span class="text-xs font-bold text-rose-400">-' + eur(x.amount) + '</span>' +
+          '<button type="button" data-del-extra="' + x.id + '" class="text-slate-500 hover:text-rose-400 text-xs"><i class="fa-solid fa-trash"></i></button></div></div>';
+      }).join('');
+    }
+
+    var income = parseFloat(appData.monthlyIncome) || 0;
+    var fixed = sum(appData.fixedExpenses);
+    var extra = sum(appData.extraExpenses);
+    var pocket = (parseFloat(appData.weeklyTarget) || 0) * 4;
+    var net = income - fixed - pocket - extra;
+    var rate = income > 0 ? ((net / income) * 100).toFixed(1) : '0';
+
+    byId('summaryIncome').textContent = eur(income);
+    byId('summaryFixed').textContent = '-' + eur(fixed);
+    byId('summaryPocket').textContent = '-' + eur(pocket);
+    byId('summaryExtra').textContent = '-' + eur(extra);
+    var s = byId('summarySavings');
+    s.textContent = eur(net);
+    s.className = 'text-2xl font-black ' + (net >= 0 ? 'text-emerald-400' : 'text-rose-500');
+    byId('summarySavingsRate').textContent = 'Quota risparmio ' + rate + '%';
+
+    renderDonut(income, fixed, pocket, extra, net);
+  }
+
+  function promptAddFixedExpense() {
+    var name = prompt('Nome spesa fissa:');
+    if (!name) return;
+    var amount = parseNum(prompt('Importo (€):'));
+    if (isNaN(amount)) return;
+    appData.fixedExpenses.push({ id: Date.now(), name: name.trim(), amount: amount });
+    saveData();
+  }
+  function promptAddExtraExpense() {
+    var name = prompt('Descrizione spesa extra:');
+    if (!name) return;
+    var amount = parseNum(prompt('Importo (€):'));
+    if (isNaN(amount)) return;
+    appData.extraExpenses.push({ id: Date.now(), name: name.trim(), amount: amount });
+    saveData();
+  }
+
+  function renderWeeksChart() {
+    var el = byId('weeksChart');
+    var weeks = appData.historicalWeeks.slice(0, 8).reverse();
+    if (!weeks.length) {
+      el.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">Nessun dato da mostrare.</p>';
+      return;
+    }
+    var max = Math.max.apply(null, weeks.map(function (w) { return w.spent + Math.max(0, w.leftover); }).concat([1]));
+    var H = 110;
+    var cols = weeks.map(function (w) {
+      var over = w.leftover < 0;
+      var spentH = Math.round((w.spent / max) * H);
+      var leftH = over ? 0 : Math.round((w.leftover / max) * H);
+      return '<div class="flex-1 flex flex-col items-center gap-1 min-w-0">' +
+        '<div class="w-full flex flex-col justify-end items-center" style="height:' + H + 'px">' +
+          (leftH ? '<div class="w-4/5 rounded-t-md bg-emerald-500/30 border border-emerald-500/40" style="height:' + leftH + 'px"></div>' : '') +
+          '<div class="w-4/5 ' + (leftH ? '' : 'rounded-t-md ') + (over ? 'bg-rose-500' : 'bg-emerald-500') + '" style="height:' + Math.max(spentH, 2) + 'px"></div>' +
+        '</div>' +
+        '<span class="text-10px font-bold ' + (over ? 'text-rose-400' : 'text-emerald-400') + '">' + (over ? '' : '+') + w.leftover.toFixed(0) + '</span>' +
+        '<span class="text-10px text-slate-500 truncate w-full text-center">' + esc(String(w.startDate).slice(0, 6)) + '</span>' +
+      '</div>';
+    }).join('');
+    el.innerHTML = '<div class="flex items-end gap-1.5">' + cols + '</div>' +
+      '<div class="flex gap-4 justify-center mt-3 text-10px text-slate-400">' +
+        '<span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-emerald-500"></span>Speso</span>' +
+        '<span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-emerald-500/30 border border-emerald-500/40"></span>Avanzo</span>' +
+        '<span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-rose-500"></span>Sforato</span>' +
+      '</div>';
+  }
+
+  function renderArchiveTab() {
+    byId('accumulatedSavings').textContent = eur(appData.accumulatedSavingsFromLeftovers);
+    renderWeeksChart();
+    var el = byId('historicalWeeksList');
+    if (!appData.historicalWeeks.length) {
+      el.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">Nessun ciclo archiviato ancora.</p>';
+      return;
+    }
+    el.innerHTML = appData.historicalWeeks.map(function (h) {
+      var neg = h.leftover < 0;
+      return '<div class="glass-card rounded-xl p-3 flex justify-between items-center border border-slate-800">' +
+        '<div><p class="text-xs font-bold text-slate-200">' + esc(h.startDate) + ' - ' + esc(h.endDate) + '</p>' +
+        '<p class="text-10px text-slate-400">Spesi ' + eur(h.spent) + '</p></div>' +
+        '<div class="text-right"><span class="text-xs font-extrabold ' + (neg ? 'text-rose-400' : 'text-emerald-400') + '">' + eur(h.leftover) + '</span>' +
+        '<p class="text-10px text-slate-500">' + esc(h.status) + '</p></div></div>';
+    }).join('');
+  }
+
+  var MONTHS = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
+  function fmtDate(d) { return ('0' + d.getDate()).slice(-2) + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear(); }
+  function nextWeekRange() {
+    var d = new Date();
+    var toMonday = ((8 - d.getDay()) % 7) || 7;
+    var start = new Date(d.getFullYear(), d.getMonth(), d.getDate() + toMonday);
+    var end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 6);
+    return [fmtDate(start), fmtDate(end)];
+  }
+
+  function openResetModal() {
+    var spent = sum(appData.currentWeek.expenses);
+    var left = appData.currentWeek.initialBudget - spent;
+    byId('modalInitial').textContent = eur(appData.currentWeek.initialBudget);
+    byId('modalSpent').textContent = eur(spent);
+    byId('modalLeftover').textContent = eur(left);
+    byId('resetModal').classList.remove('hidden');
+  }
+  function closeResetModal() { byId('resetModal').classList.add('hidden'); }
+
+  function executeSundayReset() {
+    var spent = sum(appData.currentWeek.expenses);
+    var left = appData.currentWeek.initialBudget - spent;
+    appData.historicalWeeks.unshift({
+      startDate: appData.currentWeek.startDate, endDate: appData.currentWeek.endDate,
+      spent: spent, leftover: left, status: left >= 0 ? 'Risparmiati' : 'Sforato'
+    });
+    appData.accumulatedSavingsFromLeftovers = (parseFloat(appData.accumulatedSavingsFromLeftovers) || 0) + left;
+    var r = nextWeekRange();
+    appData.currentWeek = { startDate: r[0], endDate: r[1], initialBudget: appData.weeklyTarget, expenses: [] };
+    closeResetModal();
+    saveData();
+    alert('Ciclo resettato con successo! Budget ripristinato a ' + eur(appData.weeklyTarget) + '.');
+  }
+
+  function exportDataJSON() {
+    var str = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(appData, null, 2));
+    var a = document.createElement('a');
+    a.setAttribute('href', str);
+    a.setAttribute('download', 'budget_backup_' + new Date().toISOString().slice(0, 10) + '.json');
+    document.body.appendChild(a); a.click(); a.remove();
+  }
+
+  function importDataJSON(ev) {
+    var file = ev.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      try {
+        var parsed = JSON.parse(e.target.result);
+        if (!parsed.currentWeek || !Array.isArray(parsed.fixedExpenses)) throw new Error('struttura non valida');
+        appData = normalize(parsed);
+        saveData();
+        alert('Dati importati con successo!');
+      } catch (err) { alert("Errore durante l'importazione del file JSON."); }
+      ev.target.value = '';
+    };
+    reader.readAsText(file);
+  }
+
+  function confirmFullReset() {
+    if (confirm('Sei sicuro di voler cancellare tutti i dati salvati e ripristinare la configurazione predefinita?')) {
+      try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+      appData = clone(DEFAULT_DATA);
+      saveData();
+    }
+  }
+
+  function renderAll() {
+    renderPocketTab();
+    renderMonthlyTab();
+    renderCondoTab();
+    renderArchiveTab();
+    selectCategory(appData.currentCategory || 'Spesa');
+  }
+
+  window.openResetModal = openResetModal;
+  window.closeResetModal = closeResetModal;
+  window.executeSundayReset = executeSundayReset;
+  window.exportDataJSON = exportDataJSON;
+  window.confirmFullReset = confirmFullReset;
+  window.promptAddFixedExpense = promptAddFixedExpense;
+  window.promptAddExtraExpense = promptAddExtraExpense;
+  window.addBankMovement = addBankMovement;
+  window.editWeeklyTarget = editWeeklyTarget;
+
+  function init() {
+    document.querySelectorAll('.nav-btn').forEach(function (b) {
+      b.addEventListener('click', function () { switchTab(b.getAttribute('data-tab')); });
+    });
+    document.querySelectorAll('.cat-btn').forEach(function (b) {
+      b.addEventListener('click', function () { selectCategory(b.getAttribute('data-cat')); });
+    });
+    byId('addExpenseForm').addEventListener('submit', handleAddExpense);
+    byId('importFileInput').addEventListener('change', importDataJSON);
+    byId('monthlyIncomeInput').addEventListener('change', function () { appData.monthlyIncome = parseNum(this.value) || 0; saveData(); });
+    byId('bankBalanceInput').addEventListener('change', function () {
+      var v = parseNum(this.value);
+      if (isNaN(v)) { this.value = round2(appData.bankBalance); return; }
+      setBankManually(v);
+    });
+
+    document.body.addEventListener('click', function (e) {
+      var btn = e.target.closest('button');
+      if (!btn) return;
+      var id;
+      if (btn.hasAttribute('data-del-week')) {
+        deleteWeeklyExpense(Number(btn.getAttribute('data-del-week')));
+      } else if (btn.hasAttribute('data-del-fixed')) {
+        id = Number(btn.getAttribute('data-del-fixed'));
+        appData.fixedExpenses = appData.fixedExpenses.filter(function (x) { return x.id !== id; });
+        saveData();
+      } else if (btn.hasAttribute('data-del-extra')) {
+        id = Number(btn.getAttribute('data-del-extra'));
+        appData.extraExpenses = appData.extraExpenses.filter(function (x) { return x.id !== id; });
+        saveData();
+      }
+    });
+
+    renderAll();
+    var start = 'pocket';
+    try { start = sessionStorage.getItem('activeTab') || 'pocket'; } catch (e) {}
+    switchTab(TABS.indexOf(start) >= 0 ? start : 'pocket');
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+</body>
+</html>
