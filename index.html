@@ -38,6 +38,13 @@
 
 <main class="max-w-md mx-auto w-full px-4 pt-4 flex-1">
 
+  <div id="backupBanner" class="hidden mb-4 rounded-2xl p-3 bg-amber-500/10 border border-amber-500/30 flex items-center gap-3">
+    <i class="fa-solid fa-triangle-exclamation text-amber-400"></i>
+    <p id="backupBannerText" class="text-11px text-amber-200 flex-1">Fai un backup dei tuoi dati.</p>
+    <button type="button" onclick="shareBackup()" class="text-11px bg-amber-500/20 text-amber-200 border border-amber-500/40 px-2.5 py-1 rounded-lg">Backup</button>
+    <button type="button" onclick="dismissBackupBanner()" class="text-amber-300/70 text-xs"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+
   <div id="tab-pocket" class="space-y-4">
     <div class="glass rounded-2xl p-5 shadow-xl border border-slate-700/50">
       <div class="flex justify-between items-start mb-2">
@@ -184,14 +191,18 @@
     </div>
 
     <div class="glass rounded-2xl p-4 shadow-lg">
-      <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2"><i class="fa-solid fa-database text-slate-400"></i> Gestione Dati Locale</h3>
-      <div class="grid grid-cols-2 gap-2">
-        <button type="button" onclick="exportDataJSON()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2 rounded-xl text-xs border border-slate-700 transition flex items-center justify-center gap-1.5"><i class="fa-solid fa-download"></i> Esporta JSON</button>
-        <label class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2 rounded-xl text-xs border border-slate-700 transition flex items-center justify-center gap-1.5 cursor-pointer"><i class="fa-solid fa-upload"></i> Importa JSON
-          <input type="file" id="importFileInput" accept=".json" class="hidden">
-        </label>
+      <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-1 flex items-center gap-2"><i class="fa-solid fa-cloud-arrow-up text-sky-400"></i> Backup e trasferimento dati</h3>
+      <p id="lastBackupText" class="text-10px text-slate-500 mb-3">Nessun backup eseguito.</p>
+      <button type="button" onclick="shareBackup()" class="w-full bg-sky-500/20 hover:bg-sky-500/30 text-sky-200 border border-sky-500/40 font-semibold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-2"><i class="fa-solid fa-share-nodes"></i> Condividi backup (Drive, email, …)</button>
+      <div class="grid grid-cols-2 gap-2 mt-2">
+        <button type="button" onclick="exportDataJSON()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2 rounded-xl text-xs border border-slate-700 transition flex items-center justify-center gap-1.5"><i class="fa-solid fa-download"></i> Scarica JSON</button>
+        <button type="button" onclick="exportCSV()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2 rounded-xl text-xs border border-slate-700 transition flex items-center justify-center gap-1.5"><i class="fa-solid fa-file-csv"></i> Excel (CSV)</button>
       </div>
-      <button type="button" onclick="confirmFullReset()" class="w-full mt-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 font-semibold py-2 rounded-xl text-xs transition">Azzera tutto (ripristina da zero)</button>
+      <label class="mt-2 w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2 rounded-xl text-xs border border-slate-700 transition flex items-center justify-center gap-1.5 cursor-pointer"><i class="fa-solid fa-upload"></i> Importa backup JSON
+        <input type="file" id="importFileInput" accept=".json,application/json,text/plain" class="hidden">
+      </label>
+      <p class="text-10px text-slate-500 mt-3 leading-snug">Per vedere i dati sul PC: apri questo stesso sito dal PC, premi "Importa backup JSON" e scegli il file salvato dal telefono. Con "Excel (CSV)" ottieni invece una tabella leggibile in Excel o Power BI.</p>
+      <button type="button" onclick="confirmFullReset()" class="w-full mt-4 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 font-semibold py-2 rounded-xl text-xs transition">Azzera tutto (ripristina da zero)</button>
     </div>
   </div>
 </main>
@@ -239,8 +250,10 @@
   var NAV_ON  = 'nav-btn active flex flex-col items-center py-1.5 px-2 rounded-xl text-emerald-400 transition';
   var NAV_OFF = 'nav-btn flex flex-col items-center py-1.5 px-2 rounded-xl text-slate-400 hover:text-slate-200 transition';
   var MAX_BANK_POINTS = 500;
+  var BACKUP_REMIND_DAYS = 7;
   var MONTHS = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
   var DEFAULT_WEEKLY_TARGET = 0;
+  var bannerDismissed = false;
 
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
   function round2(n) { return Math.round(n * 100) / 100; }
@@ -270,6 +283,7 @@
       accumulatedSavingsFromLeftovers: 0,
       weeklyTarget: DEFAULT_WEEKLY_TARGET,
       currentCategory: 'Spesa',
+      lastBackup: null,
       currentWeek: { startDate: r[0], endDate: r[1], initialBudget: DEFAULT_WEEKLY_TARGET, expenses: [] },
       fixedExpenses: [],
       extraExpenses: [],
@@ -653,16 +667,146 @@
     var el = byId('historicalWeeksList');
     if (!appData.historicalWeeks.length) {
       el.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">Nessun ciclo archiviato ancora.</p>';
-      return;
+    } else {
+      el.innerHTML = appData.historicalWeeks.map(function (h) {
+        var neg = h.leftover < 0;
+        return '<div class="glass-card rounded-xl p-3 flex justify-between items-center border border-slate-800">' +
+          '<div><p class="text-xs font-bold text-slate-200">' + esc(h.startDate) + ' - ' + esc(h.endDate) + '</p>' +
+          '<p class="text-10px text-slate-400">Spesi ' + eur(h.spent) + '</p></div>' +
+          '<div class="text-right"><span class="text-xs font-extrabold ' + (neg ? 'text-rose-400' : 'text-emerald-400') + '">' + eur(h.leftover) + '</span>' +
+          '<p class="text-10px text-slate-500">' + esc(h.status) + '</p></div></div>';
+      }).join('');
     }
-    el.innerHTML = appData.historicalWeeks.map(function (h) {
-      var neg = h.leftover < 0;
-      return '<div class="glass-card rounded-xl p-3 flex justify-between items-center border border-slate-800">' +
-        '<div><p class="text-xs font-bold text-slate-200">' + esc(h.startDate) + ' - ' + esc(h.endDate) + '</p>' +
-        '<p class="text-10px text-slate-400">Spesi ' + eur(h.spent) + '</p></div>' +
-        '<div class="text-right"><span class="text-xs font-extrabold ' + (neg ? 'text-rose-400' : 'text-emerald-400') + '">' + eur(h.leftover) + '</span>' +
-        '<p class="text-10px text-slate-500">' + esc(h.status) + '</p></div></div>';
-    }).join('');
+    byId('lastBackupText').textContent = appData.lastBackup
+      ? 'Ultimo backup: ' + fmtFull(appData.lastBackup)
+      : 'Nessun backup eseguito.';
+  }
+
+  /* ---------- BACKUP / EXPORT ---------- */
+  function hasUserData() {
+    return appData.bankHistory.length > 1 || appData.historicalWeeks.length > 0 ||
+      appData.fixedExpenses.length > 0 || appData.extraExpenses.length > 0 ||
+      appData.currentWeek.expenses.length > 0 || (parseFloat(appData.monthlyIncome) || 0) > 0;
+  }
+
+  function renderBackupBanner() {
+    var banner = byId('backupBanner');
+    var show = false, msg = '';
+    if (hasUserData() && !bannerDismissed) {
+      if (!appData.lastBackup) {
+        show = true; msg = 'Non hai ancora fatto nessun backup dei tuoi dati.';
+      } else {
+        var days = Math.floor((Date.now() - appData.lastBackup) / 86400000);
+        if (days >= BACKUP_REMIND_DAYS) { show = true; msg = 'Ultimo backup ' + days + ' giorni fa.'; }
+      }
+    }
+    byId('backupBannerText').textContent = msg;
+    if (show) banner.classList.remove('hidden'); else banner.classList.add('hidden');
+  }
+  function dismissBackupBanner() { bannerDismissed = true; renderBackupBanner(); }
+
+  function backupFileName(ext) {
+    return 'budget_backup_' + new Date().toISOString().slice(0, 10) + '.' + ext;
+  }
+  function backupPayload() {
+    var data = clone(appData);
+    data.lastBackup = Date.now();
+    return { data: data, json: JSON.stringify(data, null, 2) };
+  }
+  function markBackup(ts) {
+    appData.lastBackup = ts;
+    saveData();
+  }
+
+  function downloadBlob(content, mime, filename) {
+    var a = document.createElement('a');
+    a.setAttribute('href', 'data:' + mime + ';charset=utf-8,' + encodeURIComponent(content));
+    a.setAttribute('download', filename);
+    document.body.appendChild(a); a.click(); a.remove();
+  }
+
+  function exportDataJSON() {
+    var p = backupPayload();
+    downloadBlob(p.json, 'application/json', backupFileName('json'));
+    markBackup(p.data.lastBackup);
+  }
+
+  function shareBackup() {
+    var p = backupPayload();
+    var name = backupFileName('json');
+    var types = ['application/json', 'text/plain'];
+    var candidate = null;
+    try {
+      if (typeof File !== 'undefined' && navigator.canShare) {
+        for (var i = 0; i < types.length; i++) {
+          var f = new File([p.json], name, { type: types[i] });
+          if (navigator.canShare({ files: [f] })) { candidate = f; break; }
+        }
+      }
+    } catch (e) { candidate = null; }
+
+    if (candidate && navigator.share) {
+      return navigator.share({ files: [candidate], title: 'Backup Budget', text: 'Backup del ' + new Date().toLocaleDateString('it-IT') })
+        .then(function () { markBackup(p.data.lastBackup); })
+        .catch(function (err) {
+          if (err && err.name === 'AbortError') return;
+          exportDataJSON();
+        });
+    }
+    exportDataJSON();
+    return Promise.resolve();
+  }
+
+  function csvCell(v) {
+    var s = String(v === undefined || v === null ? '' : v);
+    if (/[;"\n\r]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
+    return s;
+  }
+  function csvNum(n) { return String(round2(Number(n) || 0)).replace('.', ','); }
+  function isoDay(t) {
+    var d = new Date(t);
+    return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+  }
+
+  function buildCSV() {
+    var rows = [['Tipo', 'Data', 'Descrizione', 'Categoria', 'Importo', 'Saldo conto']];
+    appData.bankHistory.forEach(function (p) {
+      rows.push(['Conto', isoDay(p.t), p.note, '', csvNum(p.delta), csvNum(p.balance)]);
+    });
+    appData.currentWeek.expenses.forEach(function (x) {
+      rows.push(['Pocket (settimana corrente)', x.date, x.title, x.category, csvNum(-x.amount), '']);
+    });
+    appData.historicalWeeks.forEach(function (h) {
+      rows.push(['Settimana chiusa', h.startDate + ' - ' + h.endDate, h.status + ' (speso ' + csvNum(h.spent) + ')', '', csvNum(h.leftover), '']);
+    });
+    appData.fixedExpenses.forEach(function (x) { rows.push(['Spesa fissa mensile', '', x.name, '', csvNum(-x.amount), '']); });
+    appData.extraExpenses.forEach(function (x) { rows.push(['Spesa extra mensile', '', x.name, '', csvNum(-x.amount), '']); });
+    rows.push(['Impostazione', '', 'Stipendio netto mensile', '', csvNum(appData.monthlyIncome), '']);
+    rows.push(['Impostazione', '', 'Pocket money settimanale', '', csvNum(appData.weeklyTarget), '']);
+    rows.push(['Impostazione', '', 'Risparmi accumulati', '', csvNum(appData.accumulatedSavingsFromLeftovers), '']);
+    return '\uFEFF' + rows.map(function (r) { return r.map(csvCell).join(';'); }).join('\r\n');
+  }
+
+  function exportCSV() {
+    downloadBlob(buildCSV(), 'text/csv', backupFileName('csv'));
+  }
+
+  function importDataJSON(ev) {
+    var file = ev.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      try {
+        var parsed = JSON.parse(e.target.result);
+        if (!parsed.currentWeek || !Array.isArray(parsed.fixedExpenses)) throw new Error('struttura non valida');
+        if (!confirm('Importare il backup? Sostituirà i dati presenti su questo dispositivo.')) { ev.target.value = ''; return; }
+        appData = normalize(parsed);
+        saveData();
+        alert('Dati importati con successo!');
+      } catch (err) { alert("Errore durante l'importazione del file JSON."); }
+      ev.target.value = '';
+    };
+    reader.readAsText(file);
   }
 
   function openResetModal() {
@@ -690,33 +834,8 @@
     alert('Ciclo resettato con successo! Budget ripristinato a ' + eur(appData.weeklyTarget) + '.');
   }
 
-  function exportDataJSON() {
-    var str = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(appData, null, 2));
-    var a = document.createElement('a');
-    a.setAttribute('href', str);
-    a.setAttribute('download', 'budget_backup_' + new Date().toISOString().slice(0, 10) + '.json');
-    document.body.appendChild(a); a.click(); a.remove();
-  }
-
-  function importDataJSON(ev) {
-    var file = ev.target.files[0];
-    if (!file) return;
-    var reader = new FileReader();
-    reader.onload = function (e) {
-      try {
-        var parsed = JSON.parse(e.target.result);
-        if (!parsed.currentWeek || !Array.isArray(parsed.fixedExpenses)) throw new Error('struttura non valida');
-        appData = normalize(parsed);
-        saveData();
-        alert('Dati importati con successo!');
-      } catch (err) { alert("Errore durante l'importazione del file JSON."); }
-      ev.target.value = '';
-    };
-    reader.readAsText(file);
-  }
-
   function confirmFullReset() {
-    if (confirm('Cancellare TUTTI i dati (saldo, spese, storico) e ripartire da zero?\n\nConsiglio: fai prima "Esporta JSON".')) {
+    if (confirm('Cancellare TUTTI i dati (saldo, spese, storico) e ripartire da zero?\n\nConsiglio: fai prima un backup.')) {
       try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
       appData = makeDefault();
       saveData();
@@ -729,6 +848,7 @@
     renderMonthlyTab();
     renderCondoTab();
     renderArchiveTab();
+    renderBackupBanner();
     selectCategory(appData.currentCategory || 'Spesa');
   }
 
@@ -736,6 +856,9 @@
   window.closeResetModal = closeResetModal;
   window.executeSundayReset = executeSundayReset;
   window.exportDataJSON = exportDataJSON;
+  window.exportCSV = exportCSV;
+  window.shareBackup = shareBackup;
+  window.dismissBackupBanner = dismissBackupBanner;
   window.confirmFullReset = confirmFullReset;
   window.promptAddFixedExpense = promptAddFixedExpense;
   window.promptAddExtraExpense = promptAddExtraExpense;
