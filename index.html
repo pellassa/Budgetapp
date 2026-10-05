@@ -191,7 +191,7 @@
           <input type="file" id="importFileInput" accept=".json" class="hidden">
         </label>
       </div>
-      <button type="button" onclick="confirmFullReset()" class="w-full mt-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 font-semibold py-2 rounded-xl text-xs transition">Ripristina Configurazione Iniziale</button>
+      <button type="button" onclick="confirmFullReset()" class="w-full mt-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 font-semibold py-2 rounded-xl text-xs transition">Azzera tutto (ripristina da zero)</button>
     </div>
   </div>
 </main>
@@ -239,43 +239,46 @@
   var NAV_ON  = 'nav-btn active flex flex-col items-center py-1.5 px-2 rounded-xl text-emerald-400 transition';
   var NAV_OFF = 'nav-btn flex flex-col items-center py-1.5 px-2 rounded-xl text-slate-400 hover:text-slate-200 transition';
   var MAX_BANK_POINTS = 500;
-
-  var DEFAULT_DATA = {
-    bankBalance: 12536.96,
-    bankHistory: [
-      { t: new Date(2026, 8, 28, 8, 0).getTime(), balance: 12536.96, delta: 0, note: 'Saldo iniziale' }
-    ],
-    monthlyIncome: 2197.00,
-    accumulatedSavingsFromLeftovers: 14.59,
-    weeklyTarget: 100.00,
-    currentCategory: 'Spesa',
-    currentWeek: {
-      startDate: '28 Set 2026',
-      endDate: '04 Ott 2026',
-      initialBudget: 100.00,
-      expenses: [
-        { id: 1, title: 'Quota Macchinetta Caffè', amount: 20.00, category: 'Caffè', date: '28/09/2026' },
-        { id: 2, title: 'Benzina Auto', amount: 30.00, category: 'Benzina', date: '28/09/2026' }
-      ]
-    },
-    fixedExpenses: [
-      { id: 1, name: 'Prestito Toyota', amount: 340.68 },
-      { id: 2, name: 'Prestito Findomestic', amount: 271.70 },
-      { id: 3, name: 'AcomeA Fondo Pensione', amount: 106.00 },
-      { id: 4, name: 'Abbonamenti Digitali', amount: 60.00 },
-      { id: 5, name: 'Bolletta Gas', amount: 41.48 }
-    ],
-    extraExpenses: [],
-    historicalWeeks: [
-      { startDate: '25 Set 2026', endDate: '27 Set 2026', spent: 25.41, leftover: 14.59, status: 'Risparmiati' }
-    ]
-  };
+  var MONTHS = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
+  var DEFAULT_WEEKLY_TARGET = 100;
 
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
   function round2(n) { return Math.round(n * 100) / 100; }
+  function fmtDate(d) { return ('0' + d.getDate()).slice(-2) + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear(); }
+
+  function thisWeekRange(now) {
+    var d = now || new Date();
+    var back = (d.getDay() + 6) % 7;
+    var start = new Date(d.getFullYear(), d.getMonth(), d.getDate() - back);
+    var end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 6);
+    return [fmtDate(start), fmtDate(end)];
+  }
+  function nextWeekRange(now) {
+    var d = now || new Date();
+    var toMonday = ((8 - d.getDay()) % 7) || 7;
+    var start = new Date(d.getFullYear(), d.getMonth(), d.getDate() + toMonday);
+    var end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 6);
+    return [fmtDate(start), fmtDate(end)];
+  }
+
+  function makeDefault() {
+    var r = thisWeekRange();
+    return {
+      bankBalance: 0,
+      bankHistory: [{ t: Date.now(), balance: 0, delta: 0, note: 'Saldo iniziale' }],
+      monthlyIncome: 0,
+      accumulatedSavingsFromLeftovers: 0,
+      weeklyTarget: DEFAULT_WEEKLY_TARGET,
+      currentCategory: 'Spesa',
+      currentWeek: { startDate: r[0], endDate: r[1], initialBudget: DEFAULT_WEEKLY_TARGET, expenses: [] },
+      fixedExpenses: [],
+      extraExpenses: [],
+      historicalWeeks: []
+    };
+  }
 
   function normalize(d) {
-    var base = clone(DEFAULT_DATA);
+    var base = makeDefault();
     if (!d || typeof d !== 'object') return base;
     var hadHistory = Array.isArray(d.bankHistory) && d.bankHistory.length > 0;
     for (var k in base) { if (d[k] === undefined || d[k] === null) d[k] = base[k]; }
@@ -296,7 +299,7 @@
     try {
       var raw = localStorage.getItem(STORAGE_KEY);
       return normalize(raw ? JSON.parse(raw) : null);
-    } catch (e) { return clone(DEFAULT_DATA); }
+    } catch (e) { return makeDefault(); }
   }
 
   var appData = loadData();
@@ -553,12 +556,17 @@
     var inp = byId('monthlyIncomeInput');
     if (document.activeElement !== inp) inp.value = appData.monthlyIncome;
 
-    byId('fixedExpensesList').innerHTML = appData.fixedExpenses.map(function (x) {
-      return '<div class="glass-card rounded-xl px-3 py-2 flex items-center justify-between border border-slate-800">' +
-        '<span class="text-xs font-medium text-slate-300">' + esc(x.name) + '</span>' +
-        '<div class="flex items-center gap-2"><span class="text-xs font-bold text-sky-300">-' + eur(x.amount) + '</span>' +
-        '<button type="button" data-del-fixed="' + x.id + '" class="text-slate-500 hover:text-rose-400 text-xs"><i class="fa-solid fa-trash"></i></button></div></div>';
-    }).join('');
+    var fixedEl = byId('fixedExpensesList');
+    if (!appData.fixedExpenses.length) {
+      fixedEl.innerHTML = '<p class="text-11px text-slate-500 italic">Nessuna spesa fissa inserita.</p>';
+    } else {
+      fixedEl.innerHTML = appData.fixedExpenses.map(function (x) {
+        return '<div class="glass-card rounded-xl px-3 py-2 flex items-center justify-between border border-slate-800">' +
+          '<span class="text-xs font-medium text-slate-300">' + esc(x.name) + '</span>' +
+          '<div class="flex items-center gap-2"><span class="text-xs font-bold text-sky-300">-' + eur(x.amount) + '</span>' +
+          '<button type="button" data-del-fixed="' + x.id + '" class="text-slate-500 hover:text-rose-400 text-xs"><i class="fa-solid fa-trash"></i></button></div></div>';
+      }).join('');
+    }
 
     var extraEl = byId('extraExpensesList');
     if (!appData.extraExpenses.length) {
@@ -656,16 +664,6 @@
     }).join('');
   }
 
-  var MONTHS = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
-  function fmtDate(d) { return ('0' + d.getDate()).slice(-2) + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear(); }
-  function nextWeekRange() {
-    var d = new Date();
-    var toMonday = ((8 - d.getDay()) % 7) || 7;
-    var start = new Date(d.getFullYear(), d.getMonth(), d.getDate() + toMonday);
-    var end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 6);
-    return [fmtDate(start), fmtDate(end)];
-  }
-
   function openResetModal() {
     var spent = sum(appData.currentWeek.expenses);
     var left = appData.currentWeek.initialBudget - spent;
@@ -678,12 +676,12 @@
 
   function executeSundayReset() {
     var spent = sum(appData.currentWeek.expenses);
-    var left = appData.currentWeek.initialBudget - spent;
+    var left = round2(appData.currentWeek.initialBudget - spent);
     appData.historicalWeeks.unshift({
       startDate: appData.currentWeek.startDate, endDate: appData.currentWeek.endDate,
-      spent: spent, leftover: left, status: left >= 0 ? 'Risparmiati' : 'Sforato'
+      spent: round2(spent), leftover: left, status: left >= 0 ? 'Risparmiati' : 'Sforato'
     });
-    appData.accumulatedSavingsFromLeftovers = (parseFloat(appData.accumulatedSavingsFromLeftovers) || 0) + left;
+    appData.accumulatedSavingsFromLeftovers = round2((parseFloat(appData.accumulatedSavingsFromLeftovers) || 0) + left);
     var r = nextWeekRange();
     appData.currentWeek = { startDate: r[0], endDate: r[1], initialBudget: appData.weeklyTarget, expenses: [] };
     closeResetModal();
@@ -717,10 +715,11 @@
   }
 
   function confirmFullReset() {
-    if (confirm('Sei sicuro di voler cancellare tutti i dati salvati e ripristinare la configurazione predefinita?')) {
+    if (confirm('Cancellare TUTTI i dati (saldo, spese, storico) e ripartire da zero?\n\nConsiglio: fai prima "Esporta JSON".')) {
       try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
-      appData = clone(DEFAULT_DATA);
+      appData = makeDefault();
       saveData();
+      switchTab('pocket');
     }
   }
 
