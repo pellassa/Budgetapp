@@ -134,6 +134,7 @@
         <div class="flex justify-between text-slate-300"><span>Stipendio</span><span id="summaryIncome" class="font-semibold text-emerald-400">0,00 €</span></div>
         <div class="flex justify-between text-slate-300"><span>Spese Fisse</span><span id="summaryFixed" class="font-semibold text-sky-400">-0,00 €</span></div>
         <div class="flex justify-between text-slate-300"><span>Pocket Money (4 sett.) <button type="button" onclick="editWeeklyTarget()" class="text-emerald-400 ml-1"><i class="fa-solid fa-pen text-10px"></i></button></span><span id="summaryPocket" class="font-semibold text-amber-400">-0,00 €</span></div>
+        <div class="flex justify-between text-slate-300"><span>Avanzi pocket già risparmiati <span id="summarySavedWeeks" class="text-10px text-slate-500"></span></span><span id="summarySaved" class="font-semibold text-emerald-400">+0,00 €</span></div>
         <div class="flex justify-between text-slate-300"><span>Spese Extra</span><span id="summaryExtra" class="font-semibold text-rose-400">-0,00 €</span></div>
         <div class="pt-3 border-t border-slate-700/80 flex justify-between items-end">
           <div>
@@ -142,6 +143,7 @@
           </div>
           <span id="summarySavingsRate" class="text-11px font-semibold text-slate-400 bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-700">0% dello stipendio</span>
         </div>
+        <p class="text-10px text-slate-500 leading-snug pt-1">Gli avanzi contano quando chiudi la settimana con "Reset Domenica": quelle chiuse nel mese corrente riducono il costo del pocket money.</p>
       </div>
     </div>
   </div>
@@ -259,6 +261,14 @@
   function round2(n) { return Math.round(n * 100) / 100; }
   function fmtDate(d) { return ('0' + d.getDate()).slice(-2) + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear(); }
 
+  function parseItDate(s) {
+    var m = String(s || '').match(/(\d{1,2})\s+([A-Za-zàù]{3})\s+(\d{4})/);
+    if (!m) return null;
+    var mi = MONTHS.indexOf(m[2].charAt(0).toUpperCase() + m[2].slice(1).toLowerCase());
+    if (mi < 0) return null;
+    return new Date(Number(m[3]), mi, Number(m[1]));
+  }
+
   function thisWeekRange(now) {
     var d = now || new Date();
     var back = (d.getDay() + 6) % 7;
@@ -368,6 +378,20 @@
     if (note === null) return;
     adjustBank(sign * amount, note.trim() || (sign > 0 ? 'Entrata' : 'Uscita'));
     saveData();
+  }
+
+  /* Avanzi (o sforamenti) delle settimane chiuse nel mese corrente */
+  function monthlyPocketSaved(now) {
+    var n = now || new Date();
+    var total = 0, count = 0;
+    appData.historicalWeeks.forEach(function (h) {
+      var end = parseItDate(h.endDate);
+      if (end && end.getFullYear() === n.getFullYear() && end.getMonth() === n.getMonth()) {
+        total += Number(h.leftover) || 0;
+        count++;
+      }
+    });
+    return { total: round2(total), weeks: count };
   }
 
   function renderBankChart() {
@@ -537,11 +561,11 @@
     }).join('');
   }
 
-  function renderDonut(income, fixed, pocket, extra, net) {
+  function renderDonut(income, fixed, pocketNet, extra, net) {
     var svg = byId('donutSvg'), legend = byId('donutLegend');
     var segs = [
       { label: 'Spese fisse', val: fixed, color: '#38bdf8' },
-      { label: 'Pocket money', val: pocket, color: '#fbbf24' },
+      { label: 'Pocket money', val: Math.max(0, pocketNet), color: '#fbbf24' },
       { label: 'Extra', val: extra, color: '#fb7185' },
       { label: 'Risparmio', val: Math.max(0, net), color: '#34d399' }
     ];
@@ -599,19 +623,25 @@
     var fixed = sum(appData.fixedExpenses);
     var extra = sum(appData.extraExpenses);
     var pocket = (parseFloat(appData.weeklyTarget) || 0) * 4;
-    var net = income - fixed - pocket - extra;
+    var saved = monthlyPocketSaved();
+    var pocketNet = pocket - saved.total;
+    var net = income - fixed - pocket - extra + saved.total;
     var rate = income > 0 ? ((net / income) * 100).toFixed(1) : '0';
 
     byId('summaryIncome').textContent = eur(income);
     byId('summaryFixed').textContent = '-' + eur(fixed);
     byId('summaryPocket').textContent = '-' + eur(pocket);
+    var sv = byId('summarySaved');
+    sv.textContent = eurSigned(saved.total);
+    sv.className = 'font-semibold ' + (saved.total >= 0 ? 'text-emerald-400' : 'text-rose-400');
+    byId('summarySavedWeeks').textContent = saved.weeks ? '(' + saved.weeks + (saved.weeks === 1 ? ' sett.' : ' sett.') + ')' : '';
     byId('summaryExtra').textContent = '-' + eur(extra);
     var s = byId('summarySavings');
     s.textContent = eur(net);
     s.className = 'text-2xl font-black ' + (net >= 0 ? 'text-emerald-400' : 'text-rose-500');
     byId('summarySavingsRate').textContent = 'Quota risparmio ' + rate + '%';
 
-    renderDonut(income, fixed, pocket, extra, net);
+    renderDonut(income, fixed, pocketNet, extra, net);
   }
 
   function promptAddFixedExpense() {
@@ -682,7 +712,6 @@
       : 'Nessun backup eseguito.';
   }
 
-  /* ---------- BACKUP / EXPORT ---------- */
   function hasUserData() {
     return appData.bankHistory.length > 1 || appData.historicalWeeks.length > 0 ||
       appData.fixedExpenses.length > 0 || appData.extraExpenses.length > 0 ||
