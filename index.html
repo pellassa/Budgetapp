@@ -191,7 +191,8 @@
 
     <div class="glass rounded-2xl p-4 shadow-lg">
       <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-1 flex items-center gap-2"><i class="fa-solid fa-box-archive text-amber-400"></i> Storico Settimane Chiuse</h3>
-      <p class="text-10px text-slate-500 mb-3">Tocca la matita per correggere budget e speso di una settimana già chiusa.</p>
+      <p class="text-10px text-slate-500 mb-3">Tocca la matita per correggere una settimana, oppure aggiungi una settimana passata che non hai registrato.</p>
+      <button type="button" onclick="addPastWeek()" class="w-full mb-3 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 font-semibold py-2 rounded-xl text-xs transition flex items-center justify-center gap-2"><i class="fa-solid fa-calendar-plus"></i> Aggiungi settimana passata</button>
       <div id="historicalWeeksList" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
     </div>
 
@@ -444,6 +445,53 @@
     h.status = newLeft >= 0 ? 'Risparmiati' : 'Sforato';
     appData.accumulatedSavingsFromLeftovers = round2((parseFloat(appData.accumulatedSavingsFromLeftovers) || 0) + (newLeft - oldLeft));
     if (adjustAccount) adjustBank(-spentDiff, 'Correzione settimana ' + label);
+    saveData();
+  }
+
+  /* Aggiunta di una settimana passata mai registrata */
+  function weekRangeBefore(nWeeksAgo) {
+    var base = parseItDate(appData.currentWeek.startDate);
+    if (!base) { base = parseItDate(thisWeekRange()[0]); }
+    var start = new Date(base.getFullYear(), base.getMonth(), base.getDate() - 7 * nWeeksAgo);
+    var end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 6);
+    return [fmtDate(start), fmtDate(end)];
+  }
+
+  function addPastWeek() {
+    var nRaw = prompt('Quale settimana vuoi aggiungere?\n\n1 = settimana scorsa\n2 = due settimane fa\n3 = tre settimane fa …', '1');
+    if (nRaw === null) return;
+    var n = parseInt(nRaw, 10);
+    if (isNaN(n) || n < 1 || n > 52) { alert('Inserisci un numero da 1 a 52.'); return; }
+    var r = weekRangeBefore(n);
+    var label = r[0] + ' - ' + r[1];
+
+    var exists = appData.historicalWeeks.some(function (h) { return h.startDate === r[0]; });
+    if (exists) { alert('La settimana ' + label + ' è già nello storico: usa la matita per correggerla.'); return; }
+
+    var b = parseNum(prompt('Settimana ' + label + '\n\nBudget pocket money di quella settimana (€):', appData.weeklyTarget));
+    if (isNaN(b) || b < 0) return;
+    var s = parseNum(prompt('Settimana ' + label + '\n\nSpeso reale in quella settimana (€):', 0));
+    if (isNaN(s) || s < 0) return;
+    b = round2(b); s = round2(s);
+    var left = round2(b - s);
+
+    var adjustAccount = false;
+    if (s > 0) {
+      adjustAccount = confirm('Scalare anche ' + eur(s) + ' dal saldo del conto?\n\nOK = sì\nAnnulla = no (il conto è già aggiornato)');
+    }
+    if (!confirm('Aggiungere la settimana ' + label + '?\n\nBudget ' + eur(b) + '\nSpeso ' + eur(s) + '\nAvanzo ' + eur(left))) return;
+
+    appData.historicalWeeks.push({
+      startDate: r[0], endDate: r[1],
+      budget: b, spent: s, leftover: left,
+      status: left >= 0 ? 'Risparmiati' : 'Sforato'
+    });
+    appData.historicalWeeks.sort(function (a, c) {
+      var da = parseItDate(a.startDate), dc = parseItDate(c.startDate);
+      return (dc ? dc.getTime() : 0) - (da ? da.getTime() : 0);
+    });
+    appData.accumulatedSavingsFromLeftovers = round2((parseFloat(appData.accumulatedSavingsFromLeftovers) || 0) + left);
+    if (adjustAccount) adjustBank(-s, 'Settimana passata ' + label);
     saveData();
   }
 
@@ -951,6 +999,7 @@
   window.promptAddExtraExpense = promptAddExtraExpense;
   window.addBankMovement = addBankMovement;
   window.editWeeklyTarget = editWeeklyTarget;
+  window.addPastWeek = addPastWeek;
 
   function init() {
     document.querySelectorAll('.nav-btn').forEach(function (b) {
