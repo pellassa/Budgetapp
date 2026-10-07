@@ -1430,7 +1430,34 @@
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
+    /*
+   * API pubblica minima per il backup Google Drive.
+   * Non contiene dati: permette al file drive-sync.js di leggere
+   * o ripristinare i dati del browser solo dopo un'azione dell'utente.
+   */
+  window.BudgetApp = {
+    getData: function () {
+      return clone(appData);
+    },
+
+    replaceData: function (data) {
+      appData = normalize(data);
+      processRecurring();
+
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+      } catch (e) {}
+
+      renderAll();
+      return clone(appData);
+    },
+
+    hasData: function () {
+      return hasUserData();
+    }
+  };
 })();
 </script>
+  <script src="drive-sync.js"></script>
 </body>
 </html>
