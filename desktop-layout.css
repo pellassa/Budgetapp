@@ -1,0 +1,191 @@
+/* Desktop dashboard enhancement for Budget Completo.
+   Mobile remains unchanged. */
+@media (min-width: 1024px) {
+  body {
+    padding-bottom: 0 !important;
+    min-height: 100vh;
+    background:
+      radial-gradient(circle at 15% 15%, rgba(16, 185, 129, .08), transparent 26rem),
+      radial-gradient(circle at 85% 85%, rgba(14, 165, 233, .06), transparent 30rem),
+      #0f172a;
+  }
+
+  header {
+    position: sticky !important;
+    left: 15rem;
+    width: calc(100% - 15rem);
+    padding: 1.1rem 2.25rem !important;
+  }
+
+  main {
+    max-width: 1440px !important;
+    margin-left: 15rem !important;
+    width: calc(100% - 15rem) !important;
+    padding: 2rem 2.25rem 2.5rem !important;
+  }
+
+  nav {
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: auto;
+    width: 15rem;
+    padding: 1.5rem 1rem !important;
+    border-top: 0 !important;
+    border-right: 1px solid rgba(51, 65, 85, .9);
+    background: rgba(15, 23, 42, .94) !important;
+    backdrop-filter: blur(20px);
+  }
+
+  nav > div {
+    max-width: none !important;
+    display: flex !important;
+    flex-direction: column;
+    gap: .55rem !important;
+    padding-top: 3.75rem;
+  }
+
+  .nav-btn {
+    width: 100%;
+    min-height: 3.35rem;
+    flex-direction: row !important;
+    justify-content: flex-start;
+    gap: .8rem;
+    padding: .75rem .9rem !important;
+    text-align: left;
+  }
+
+  .nav-btn i {
+    margin-bottom: 0 !important;
+    width: 1.25rem;
+    text-align: center;
+  }
+
+  .nav-btn span {
+    font-size: .78rem !important;
+  }
+
+  #backupBanner {
+    max-width: 920px;
+  }
+
+  #tab-pocket {
+    display: grid;
+    grid-template-columns: minmax(0, .95fr) minmax(24rem, 1.05fr);
+    gap: 1.25rem;
+    align-items: start;
+  }
+
+  #tab-pocket > :first-child {
+    grid-column: 1 / -1;
+  }
+
+  #tab-pocket > :nth-child(2) {
+    grid-column: 1;
+  }
+
+  #tab-pocket > :nth-child(3) {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  #weeklyTransactionsList {
+    max-height: 34rem !important;
+  }
+
+  #tab-monthly {
+    display: grid;
+    grid-template-columns: minmax(22rem, .9fr) minmax(22rem, 1.1fr);
+    gap: 1.25rem;
+    align-items: start;
+  }
+
+  #tab-monthly > :first-child,
+  #tab-monthly > :nth-child(2) {
+    min-height: 100%;
+  }
+
+  #tab-monthly > :nth-child(3),
+  #tab-monthly > :nth-child(4) {
+    grid-column: span 1;
+  }
+
+  #tab-monthly > :last-child {
+    grid-column: 1 / -1;
+  }
+
+  #tab-condo {
+    display: grid;
+    grid-template-columns: minmax(20rem, .78fr) minmax(25rem, 1.22fr);
+    gap: 1.25rem;
+    align-items: start;
+  }
+
+  #tab-condo > :first-child {
+    grid-column: 1;
+  }
+
+  #tab-condo > :nth-child(2) {
+    grid-column: 1;
+  }
+
+  #tab-condo > :nth-child(3) {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  #tab-condo > :nth-child(4) {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  #bankMovements {
+    max-height: 34rem;
+    overflow-y: auto;
+    padding-right: .3rem;
+  }
+
+  #tab-archive {
+    display: grid;
+    grid-template-columns: minmax(22rem, 1fr) minmax(22rem, 1fr);
+    gap: 1.25rem;
+    align-items: start;
+  }
+
+  #tab-archive > :first-child {
+    grid-column: 1 / -1;
+  }
+
+  #tab-archive > :nth-child(2),
+  #tab-archive > :nth-child(3) {
+    grid-column: 1;
+  }
+
+  #tab-archive > :nth-child(n+4) {
+    grid-column: 2;
+  }
+
+  #historicalWeeksList {
+    max-height: 28rem !important;
+  }
+
+  .glass {
+    box-shadow: 0 16px 36px rgba(2, 6, 23, .22);
+  }
+}
+
+@media (min-width: 1280px) {
+  main {
+    padding-left: 3rem !important;
+    padding-right: 3rem !important;
+  }
+
+  header {
+    padding-left: 3rem !important;
+    padding-right: 3rem !important;
+  }
+
+  #tab-pocket {
+    grid-template-columns: minmax(24rem, .85fr) minmax(32rem, 1.15fr);
+  }
+}
