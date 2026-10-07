@@ -1,6 +1,8 @@
 /* Desktop dashboard enhancement for Budget Completo.
    Mobile remains unchanged. */
 @media (min-width: 1024px) {
+  :root { --desktop-sidebar: 14.25rem; }
+
   body {
     padding-bottom: 0 !important;
     min-height: 100vh;
@@ -12,16 +14,22 @@
 
   header {
     position: sticky !important;
-    left: 15rem;
-    width: calc(100% - 15rem);
-    padding: 1.1rem 2.25rem !important;
+    left: var(--desktop-sidebar);
+    width: calc(100% - var(--desktop-sidebar));
+    padding: 1.1rem clamp(1.75rem, 3vw, 3rem) !important;
   }
 
   main {
-    max-width: 1440px !important;
-    margin-left: 15rem !important;
-    width: calc(100% - 15rem) !important;
-    padding: 2rem 2.25rem 2.5rem !important;
+    max-width: none !important;
+    margin-left: var(--desktop-sidebar) !important;
+    width: calc(100% - var(--desktop-sidebar)) !important;
+    padding: 2rem clamp(1.75rem, 3vw, 3rem) 3rem !important;
+  }
+
+  main > * {
+    max-width: 1360px;
+    margin-left: auto;
+    margin-right: auto;
   }
 
   nav {
@@ -29,8 +37,8 @@
     bottom: 0;
     left: 0;
     right: auto;
-    width: 15rem;
-    padding: 1.5rem 1rem !important;
+    width: var(--desktop-sidebar);
+    padding: 1.25rem .75rem !important;
     border-top: 0 !important;
     border-right: 1px solid rgba(51, 65, 85, .9);
     background: rgba(15, 23, 42, .94) !important;
@@ -41,151 +49,99 @@
     max-width: none !important;
     display: flex !important;
     flex-direction: column;
-    gap: .55rem !important;
-    padding-top: 3.75rem;
+    gap: .45rem !important;
+    padding-top: 3.85rem;
   }
 
   .nav-btn {
     width: 100%;
-    min-height: 3.35rem;
+    min-height: 3.2rem;
     flex-direction: row !important;
     justify-content: flex-start;
-    gap: .8rem;
-    padding: .75rem .9rem !important;
+    gap: .75rem;
+    padding: .72rem .85rem !important;
     text-align: left;
   }
 
   .nav-btn i {
     margin-bottom: 0 !important;
-    width: 1.25rem;
+    width: 1.2rem;
     text-align: center;
   }
 
-  .nav-btn span {
-    font-size: .78rem !important;
-  }
+  .nav-btn span { font-size: .78rem !important; }
+  #backupBanner { max-width: 100%; }
 
-  #backupBanner {
-    max-width: 920px;
+  #tab-pocket,
+  #tab-monthly,
+  #tab-condo,
+  #tab-archive {
+    align-items: start;
   }
 
   #tab-pocket {
     display: grid;
-    grid-template-columns: minmax(0, .95fr) minmax(24rem, 1.05fr);
-    gap: 1.25rem;
-    align-items: start;
+    grid-template-columns: minmax(25rem, .9fr) minmax(29rem, 1.1fr);
+    gap: 1.35rem;
   }
 
-  #tab-pocket > :first-child {
-    grid-column: 1 / -1;
-  }
-
-  #tab-pocket > :nth-child(2) {
-    grid-column: 1;
-  }
-
-  #tab-pocket > :nth-child(3) {
-    grid-column: 2;
-    grid-row: 2;
-  }
-
-  #weeklyTransactionsList {
-    max-height: 34rem !important;
-  }
+  #tab-pocket > :first-child { grid-column: 1 / -1; }
+  #tab-pocket > :nth-child(2) { grid-column: 1; }
+  #tab-pocket > :nth-child(3) { grid-column: 2; grid-row: 2; }
+  #weeklyTransactionsList { max-height: 31rem !important; overflow-y: auto; padding-right: .25rem; }
 
   #tab-monthly {
     display: grid;
-    grid-template-columns: minmax(22rem, .9fr) minmax(22rem, 1.1fr);
-    gap: 1.25rem;
-    align-items: start;
+    grid-template-columns: minmax(22rem, .9fr) minmax(24rem, 1.1fr);
+    gap: 1.35rem;
   }
 
   #tab-monthly > :first-child,
-  #tab-monthly > :nth-child(2) {
-    min-height: 100%;
-  }
+  #tab-monthly > :nth-child(2) { min-height: 100%; }
+  #tab-monthly > :last-child { grid-column: 1 / -1; }
 
   #tab-monthly > :nth-child(3),
   #tab-monthly > :nth-child(4) {
-    grid-column: span 1;
-  }
-
-  #tab-monthly > :last-child {
-    grid-column: 1 / -1;
+    max-height: 35rem;
+    overflow-y: auto;
+    padding-right: .25rem;
   }
 
   #tab-condo {
     display: grid;
-    grid-template-columns: minmax(20rem, .78fr) minmax(25rem, 1.22fr);
-    gap: 1.25rem;
-    align-items: start;
+    grid-template-columns: minmax(23rem, .82fr) minmax(31rem, 1.18fr);
+    gap: 1.35rem;
   }
 
-  #tab-condo > :first-child {
-    grid-column: 1;
-  }
-
-  #tab-condo > :nth-child(2) {
-    grid-column: 1;
-  }
-
-  #tab-condo > :nth-child(3) {
-    grid-column: 2;
-    grid-row: 1;
-  }
-
-  #tab-condo > :nth-child(4) {
-    grid-column: 2;
-    grid-row: 2;
-  }
+  #tab-condo > :first-child { grid-column: 1; }
+  #tab-condo > :nth-child(2) { grid-column: 1; }
+  #tab-condo > :nth-child(3) { grid-column: 2; grid-row: 1; }
+  #tab-condo > :nth-child(4) { grid-column: 2; grid-row: 2; }
 
   #bankMovements {
-    max-height: 34rem;
+    max-height: 30rem;
     overflow-y: auto;
     padding-right: .3rem;
   }
 
   #tab-archive {
     display: grid;
-    grid-template-columns: minmax(22rem, 1fr) minmax(22rem, 1fr);
-    gap: 1.25rem;
-    align-items: start;
+    grid-template-columns: minmax(28rem, 1.15fr) minmax(23rem, .85fr);
+    gap: 1.35rem;
   }
 
-  #tab-archive > :first-child {
-    grid-column: 1 / -1;
-  }
+  #tab-archive > :first-child { grid-column: 1 / -1; }
+  #tab-archive > :nth-child(2) { grid-column: 1; }
+  #tab-archive > :nth-child(3) { grid-column: 1; }
+  #tab-archive > :nth-child(n+4) { grid-column: 2; }
+  #historicalWeeksList { max-height: 25rem !important; overflow-y: auto; padding-right: .25rem; }
 
-  #tab-archive > :nth-child(2),
-  #tab-archive > :nth-child(3) {
-    grid-column: 1;
-  }
-
-  #tab-archive > :nth-child(n+4) {
-    grid-column: 2;
-  }
-
-  #historicalWeeksList {
-    max-height: 28rem !important;
-  }
-
-  .glass {
-    box-shadow: 0 16px 36px rgba(2, 6, 23, .22);
-  }
+  .glass { box-shadow: 0 16px 36px rgba(2, 6, 23, .22); }
 }
 
 @media (min-width: 1280px) {
-  main {
-    padding-left: 3rem !important;
-    padding-right: 3rem !important;
-  }
-
-  header {
-    padding-left: 3rem !important;
-    padding-right: 3rem !important;
-  }
-
-  #tab-pocket {
-    grid-template-columns: minmax(24rem, .85fr) minmax(32rem, 1.15fr);
-  }
+  #tab-pocket { grid-template-columns: minmax(27rem, .88fr) minmax(36rem, 1.12fr); }
+  #tab-monthly { grid-template-columns: minmax(26rem, .92fr) minmax(30rem, 1.08fr); }
+  #tab-condo { grid-template-columns: minmax(26rem, .8fr) minmax(38rem, 1.2fr); }
+  #tab-archive { grid-template-columns: minmax(32rem, 1.2fr) minmax(27rem, .8fr); }
 }
