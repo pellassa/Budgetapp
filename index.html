@@ -76,6 +76,14 @@
 
     <div class="glass rounded-2xl p-4 shadow-lg">
       <div class="flex justify-between items-center mb-3">
+        <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-chart-pie text-amber-400"></i> Limiti per categoria</h3>
+        <button type="button" id="manageCategoryLimitsBtn" class="text-11px bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-2.5 py-1 rounded-lg transition">Gestisci</button>
+      </div>
+      <div id="categoryLimitsList" class="space-y-3"></div>
+    </div>
+
+    <div class="glass rounded-2xl p-4 shadow-lg">
+      <div class="flex justify-between items-center mb-3">
         <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-list-ul text-emerald-400"></i> Movimenti Settimana</h3>
         <span id="expenseCount" class="text-11px text-slate-400 font-medium">0 transazioni</span>
       </div>
@@ -237,6 +245,62 @@
       <button type="button" onclick="closeResetModal()" class="w-1/2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-2.5 rounded-xl text-xs transition">Annulla</button>
       <button type="button" onclick="executeSundayReset()" class="w-1/2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold py-2.5 rounded-xl text-xs transition shadow-lg shadow-emerald-500/20">Conferma Reset</button>
     </div>
+  </div>
+</div>
+
+<div id="categoryLimitsModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4" aria-hidden="true">
+  <div class="glass max-w-sm w-full rounded-2xl p-5 shadow-2xl border border-slate-700" role="dialog" aria-modal="true" aria-labelledby="categoryLimitsTitle" aria-describedby="categoryLimitsDescription" tabindex="-1">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400"><i class="fa-solid fa-chart-pie text-xl"></i></div>
+      <div>
+        <h3 id="categoryLimitsTitle" class="font-bold text-white text-base">Limiti per categoria</h3>
+        <p id="categoryLimitsDescription" class="text-xs text-slate-400">Facoltativi, validi per la settimana corrente.</p>
+      </div>
+    </div>
+    <form id="categoryLimitsForm" class="space-y-3">
+      <div class="space-y-2">
+        <div class="flex items-center gap-3">
+          <label for="categoryLimit-Spesa" class="flex-1 text-sm text-slate-200"><i class="fa-solid fa-cart-shopping w-5 text-slate-400"></i> Spesa</label>
+          <div class="relative w-32">
+            <input type="number" id="categoryLimit-Spesa" data-category-limit="Spesa" min="0" step="0.01" inputmode="decimal" placeholder="Nessun limite" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl pl-3 pr-8 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 placeholder-slate-600">
+            <span class="absolute right-3 top-2 text-sm text-slate-500" aria-hidden="true">€</span>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <label for="categoryLimit-Benzina" class="flex-1 text-sm text-slate-200"><i class="fa-solid fa-gas-pump w-5 text-slate-400"></i> Benzina</label>
+          <div class="relative w-32">
+            <input type="number" id="categoryLimit-Benzina" data-category-limit="Benzina" min="0" step="0.01" inputmode="decimal" placeholder="Nessun limite" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl pl-3 pr-8 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 placeholder-slate-600">
+            <span class="absolute right-3 top-2 text-sm text-slate-500" aria-hidden="true">€</span>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <label for="categoryLimit-Caffè" class="flex-1 text-sm text-slate-200"><i class="fa-solid fa-mug-hot w-5 text-slate-400"></i> Caffè</label>
+          <div class="relative w-32">
+            <input type="number" id="categoryLimit-Caffè" data-category-limit="Caffè" min="0" step="0.01" inputmode="decimal" placeholder="Nessun limite" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl pl-3 pr-8 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 placeholder-slate-600">
+            <span class="absolute right-3 top-2 text-sm text-slate-500" aria-hidden="true">€</span>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <label for="categoryLimit-Svago" class="flex-1 text-sm text-slate-200"><i class="fa-solid fa-utensils w-5 text-slate-400"></i> Svago</label>
+          <div class="relative w-32">
+            <input type="number" id="categoryLimit-Svago" data-category-limit="Svago" min="0" step="0.01" inputmode="decimal" placeholder="Nessun limite" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl pl-3 pr-8 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 placeholder-slate-600">
+            <span class="absolute right-3 top-2 text-sm text-slate-500" aria-hidden="true">€</span>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <label for="categoryLimit-Altro" class="flex-1 text-sm text-slate-200"><i class="fa-solid fa-ellipsis w-5 text-slate-400"></i> Altro</label>
+          <div class="relative w-32">
+            <input type="number" id="categoryLimit-Altro" data-category-limit="Altro" min="0" step="0.01" inputmode="decimal" placeholder="Nessun limite" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl pl-3 pr-8 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 placeholder-slate-600">
+            <span class="absolute right-3 top-2 text-sm text-slate-500" aria-hidden="true">€</span>
+          </div>
+        </div>
+      </div>
+      <p class="text-10px text-slate-500">Campo vuoto o 0 = nessun limite. I limiti sono solo informativi: puoi sempre registrare una spesa.</p>
+      <div class="flex gap-2 pt-1">
+        <button type="button" id="cancelCategoryLimitsBtn" class="w-1/2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-2.5 rounded-xl text-xs transition">Annulla</button>
+        <button type="submit" class="w-1/2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold py-2.5 rounded-xl text-xs transition shadow-lg shadow-emerald-500/20">Salva</button>
+      </div>
+    </form>
   </div>
 </div>
 
