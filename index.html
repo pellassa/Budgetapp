@@ -241,6 +241,79 @@
       <button type="button" onclick="confirmFullReset()" class="w-full mt-4 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 font-semibold py-2 rounded-xl text-xs transition">Azzera tutto (ripristina da zero)</button>
     </div>
   </div>
+
+  <div id="tab-trends" class="hidden space-y-4">
+    <div class="glass rounded-2xl p-4 shadow-lg">
+      <h2 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2"><i class="fa-solid fa-chart-column text-sky-400"></i> Andamento spese</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label for="spendingTrendMonth" class="block text-11px font-medium text-slate-300 mb-1">Mese</label>
+          <select id="spendingTrendMonth" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-sky-500"></select>
+        </div>
+        <div>
+          <label for="spendingTrendType" class="block text-11px font-medium text-slate-300 mb-1">Tipologia di spesa</label>
+          <select id="spendingTrendType" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-sky-500">
+            <option value="all">Tutte</option>
+            <option value="pocket">Pocket</option>
+            <option value="fixed">Spese fisse</option>
+            <option value="extra">Spese extra</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="glass rounded-2xl p-5 shadow-xl border border-slate-700/50">
+      <p id="spendingTrendSelectedMonth" class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2"></p>
+      <p class="text-10px text-slate-500 uppercase font-bold tracking-wider">Uscite effettive</p>
+      <p id="spendingTrendTotal" class="text-3xl font-extrabold text-white tracking-tight mt-1">0,00 €</p>
+      <div class="mt-3 pt-3 border-t border-slate-800">
+        <p id="spendingTrendComparison" class="text-xs font-medium text-slate-300"></p>
+        <p id="spendingTrendComparisonNote" class="text-10px text-slate-500 mt-1"></p>
+      </div>
+    </div>
+
+    <div class="glass rounded-2xl p-4 shadow-lg">
+      <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-1 flex items-center gap-2"><i class="fa-solid fa-chart-simple text-sky-400"></i> Ultimi 6 mesi</h3>
+      <p id="spendingTrendChartDescription" class="text-10px text-slate-500 mb-3">Totale delle uscite effettive per mese; le barre sono accompagnate dai valori.</p>
+      <div id="spendingTrendChart" aria-describedby="spendingTrendChartDescription"></div>
+      <div class="overflow-x-auto mt-3">
+        <table class="w-full text-left text-xs">
+          <caption class="sr-only">Totali mensili delle uscite effettive negli ultimi sei mesi</caption>
+          <thead>
+            <tr class="border-b border-slate-700 text-slate-400">
+              <th scope="col" class="py-2 pr-3 font-semibold">Mese</th>
+              <th scope="col" class="py-2 text-right font-semibold">Uscite</th>
+            </tr>
+          </thead>
+          <tbody id="spendingTrendMonthsTable"></tbody>
+        </table>
+      </div>
+      <div class="mt-4">
+        <h4 class="text-11px font-bold text-slate-300 mb-2">Addebiti fissi ed extra registrati nel mese</h4>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <caption class="sr-only">Addebiti fissi ed extra contabilizzati nel mese selezionato</caption>
+            <thead>
+              <tr class="border-b border-slate-700 text-slate-400">
+                <th scope="col" class="py-2 pr-3 font-semibold">Data</th>
+                <th scope="col" class="py-2 pr-3 font-semibold">Voce</th>
+                <th scope="col" class="py-2 text-right font-semibold">Importo</th>
+              </tr>
+            </thead>
+            <tbody id="spendingTrendDebitsTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="glass rounded-2xl p-4 shadow-lg">
+      <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-1 flex items-center gap-2"><i class="fa-solid fa-tags text-amber-400"></i> Ripartizione per categoria</h3>
+      <p id="spendingTrendCategoryNote" class="text-10px text-slate-500 mb-3"></p>
+      <div id="spendingTrendCategories" class="space-y-2"></div>
+    </div>
+
+    <p class="text-10px text-slate-500 leading-snug px-1">Lo storico aggregato delle settimane chiuse non conserva i dettagli delle singole spese. Per Pocket, i mesi passati includono solo i movimenti datati ancora disponibili nel registro del conto; le categorie sono mostrate solo per spese dettagliate con categoria salvata. Eventuali movimenti storici non più disponibili non possono essere ricostruiti.</p>
+  </div>
 </main>
 
 <div id="resetModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
@@ -322,9 +395,10 @@
 </div>
 
 <nav class="glass fixed bottom-0 left-0 right-0 z-40 border-t border-slate-800 px-2 py-2">
-  <div class="max-w-md mx-auto grid grid-cols-4 gap-1">
+  <div class="max-w-md mx-auto grid grid-cols-5 gap-1">
     <button type="button" id="nav-pocket" data-tab="pocket" class="nav-btn flex flex-col items-center py-1.5 px-2 rounded-xl transition"><i class="fa-solid fa-coins text-base mb-1"></i><span class="text-10px font-semibold">Pocket</span></button>
     <button type="button" id="nav-monthly" data-tab="monthly" class="nav-btn flex flex-col items-center py-1.5 px-2 rounded-xl transition"><i class="fa-solid fa-chart-pie text-base mb-1"></i><span class="text-10px font-semibold">Mese</span></button>
+    <button type="button" id="nav-trends" data-tab="trends" class="nav-btn flex flex-col items-center py-1.5 px-2 rounded-xl transition"><i class="fa-solid fa-chart-column text-base mb-1"></i><span class="text-10px font-semibold">Andamento</span></button>
     <button type="button" id="nav-condo" data-tab="condo" class="nav-btn flex flex-col items-center py-1.5 px-2 rounded-xl transition"><i class="fa-solid fa-building-columns text-base mb-1"></i><span class="text-10px font-semibold">Conto</span></button>
     <button type="button" id="nav-archive" data-tab="archive" class="nav-btn flex flex-col items-center py-1.5 px-2 rounded-xl transition"><i class="fa-solid fa-box-archive text-base mb-1"></i><span class="text-10px font-semibold">Archivio</span></button>
   </div>

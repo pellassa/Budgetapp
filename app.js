@@ -2,7 +2,7 @@
   'use strict';
 
   var STORAGE_KEY = 'userbudgetpwadata';
-  var TABS = ['pocket', 'monthly', 'condo', 'archive'];
+  var TABS = ['pocket', 'monthly', 'trends', 'condo', 'archive'];
   var CAT_ICONS = { 'Spesa': 'fa-cart-shopping', 'Benzina': 'fa-gas-pump', 'Caffè': 'fa-mug-hot', 'Svago': 'fa-utensils', 'Altro': 'fa-ellipsis' };
   var CATEGORIES = ['Spesa', 'Benzina', 'Caffè', 'Svago', 'Altro'];
   var CAT_ON  = 'cat-btn active bg-emerald-500/20 border border-emerald-500/50 text-emerald-300 p-2 rounded-xl text-center flex flex-col items-center gap-1 transition';
@@ -28,12 +28,45 @@
   var categoryLimitsReturnFocus = null;
   var weeklyExpenseSearch = '';
   var weeklyExpenseCategory = 'all';
+  var spendingTrendMonth = ymKey(new Date());
+  var spendingTrendType = 'all';
 
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
   function round2(n) { return Math.round(n * 100) / 100; }
   function fmtDate(d) { return ('0' + d.getDate()).slice(-2) + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear(); }
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
   function ymKey(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2); }
+  function monthFromKey(key) {
+    var match = String(key || '').match(/^(\d{4})-(\d{2})$/);
+    if (!match) return null;
+    var date = new Date(Number(match[1]), Number(match[2]) - 1, 1);
+    return date.getFullYear() === Number(match[1]) && date.getMonth() === Number(match[2]) - 1 ? date : null;
+  }
+  function monthLabel(key) {
+    var date = monthFromKey(key);
+    if (!date) return key;
+    var label = date.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
+    return label.charAt(0).toLocaleUpperCase('it') + label.slice(1);
+  }
+  function monthKeyFromTimestamp(timestamp) {
+    if (typeof timestamp !== 'number' || !isFinite(timestamp)) return null;
+    var date = new Date(timestamp);
+    return isNaN(date.getTime()) ? null : ymKey(date);
+  }
+  function monthKeyFromExpenseDate(value) {
+    var text = String(value || '').trim();
+    var isoMatch = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (isoMatch) {
+      var isoDate = new Date(Number(isoMatch[1]), Number(isoMatch[2]) - 1, Number(isoMatch[3]));
+      if (isoDate.getFullYear() === Number(isoMatch[1]) && isoDate.getMonth() === Number(isoMatch[2]) - 1 && isoDate.getDate() === Number(isoMatch[3])) return ymKey(isoDate);
+      return null;
+    }
+    var localMatch = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (!localMatch) return null;
+    var localDate = new Date(Number(localMatch[3]), Number(localMatch[2]) - 1, Number(localMatch[1]));
+    if (localDate.getFullYear() !== Number(localMatch[3]) || localDate.getMonth() !== Number(localMatch[2]) - 1 || localDate.getDate() !== Number(localMatch[1])) return null;
+    return ymKey(localDate);
+  }
   function daysInMonth(y, m) { return new Date(y, m + 1, 0).getDate(); }
   function startOfDay(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
   function dueDate(y, m, day) { return new Date(y, m, Math.min(Math.max(1, day), daysInMonth(y, m))); }
@@ -1064,6 +1097,163 @@
       : 'Nessun backup eseguito.';
   }
 
+  function spendingOutflows() {
+    var events = [];
+    var currentExpenseIds = {};
+    var fixedById = {};
+    var extraById = {};
+    (Array.isArray(appData.fixedExpenses) ? appData.fixedExpenses : []).forEach(function (expense) {
+      fixedById[String(expense.id)] = expense.name;
+    });
+    (Array.isArray(appData.extraExpenses) ? appData.extraExpenses : []).forEach(function (expense) {
+      extraById[String(expense.id)] = expense.name;
+    });
+    var expenses = appData.currentWeek && Array.isArray(appData.currentWeek.expenses) ? appData.currentWeek.expenses : [];
+    expenses.forEach(function (expense) {
+      if (expense.id !== undefined && expense.id !== null) currentExpenseIds[String(expense.id)] = true;
+      var dateKey = monthKeyFromExpenseDate(expense.date);
+      if (!dateKey) {
+        var linked = appData.bankHistory.filter(function (entry) {
+          return entry.src === 'pocket' && entry.refId !== undefined && String(entry.refId) === String(expense.id);
+        })[0];
+        dateKey = linked ? monthKeyFromTimestamp(linked.t) : null;
+      }
+      var amount = Number(expense.amount);
+      if (dateKey && isFinite(amount) && amount > 0) {
+        events.push({ month: dateKey, type: 'pocket', amount: amount, category: CATEGORIES.indexOf(expense.category) >= 0 ? expense.category : null });
+      }
+    });
+
+    appData.bankHistory.forEach(function (entry) {
+      if (entry.src === 'pocket') {
+        if (entry.refId !== undefined && entry.refId !== null && currentExpenseIds[String(entry.refId)]) return;
+        var pocketMonth = monthKeyFromTimestamp(entry.t);
+        var pocketAmount = Number(entry.delta);
+        if (pocketMonth && isFinite(pocketAmount) && pocketAmount < 0) {
+          events.push({ month: pocketMonth, type: 'pocket', amount: Math.abs(pocketAmount), category: null });
+        }
+        return;
+      }
+      if (entry.src !== 'fixed' && entry.src !== 'extra') return;
+      var month = monthKeyFromTimestamp(entry.t);
+      var delta = Number(entry.delta);
+      if (!month || !isFinite(delta) || delta >= 0) return;
+      events.push({
+        month: month,
+        type: entry.src,
+        amount: Math.abs(delta),
+        refId: entry.refId,
+        timestamp: entry.t,
+        name: entry.refId !== undefined && entry.refId !== null
+          ? (entry.src === 'fixed' ? fixedById[String(entry.refId)] : extraById[String(entry.refId)]) || ''
+          : ''
+      });
+    });
+    return events;
+  }
+
+  function sixMonthKeys(endMonth) {
+    var end = monthFromKey(endMonth);
+    if (!end) return [];
+    var keys = [];
+    for (var offset = 5; offset >= 0; offset--) {
+      keys.push(ymKey(new Date(end.getFullYear(), end.getMonth() - offset, 1)));
+    }
+    return keys;
+  }
+
+  function renderSpendingTrends() {
+    var events = spendingOutflows();
+    var availableMonths = {};
+    events.forEach(function (event) { availableMonths[event.month] = true; });
+    availableMonths[ymKey(new Date())] = true;
+    availableMonths[spendingTrendMonth] = true;
+    var monthSelect = byId('spendingTrendMonth');
+    var months = Object.keys(availableMonths).sort().reverse();
+    monthSelect.innerHTML = months.map(function (month) {
+      return '<option value="' + month + '">' + esc(monthLabel(month)) + '</option>';
+    }).join('');
+    if (months.indexOf(spendingTrendMonth) < 0) spendingTrendMonth = ymKey(new Date());
+    monthSelect.value = spendingTrendMonth;
+    byId('spendingTrendType').value = spendingTrendType;
+
+    var filteredEvents = events.filter(function (event) {
+      return spendingTrendType === 'all' || event.type === spendingTrendType;
+    });
+    var selectedTotal = round2(filteredEvents.reduce(function (total, event) {
+      return total + (event.month === spendingTrendMonth ? event.amount : 0);
+    }, 0));
+    var previousDate = monthFromKey(spendingTrendMonth);
+    var previousMonth = ymKey(new Date(previousDate.getFullYear(), previousDate.getMonth() - 1, 1));
+    var previousTotal = round2(filteredEvents.reduce(function (total, event) {
+      return total + (event.month === previousMonth ? event.amount : 0);
+    }, 0));
+    var difference = round2(selectedTotal - previousTotal);
+
+    byId('spendingTrendSelectedMonth').textContent = monthLabel(spendingTrendMonth);
+    byId('spendingTrendTotal').textContent = eur(selectedTotal);
+    byId('spendingTrendComparison').textContent = 'Differenza assoluta rispetto a ' + monthLabel(previousMonth) + ': ' + eurSigned(difference);
+    byId('spendingTrendComparisonNote').textContent = previousTotal > 0
+      ? 'Mese precedente: ' + eur(previousTotal) + ' · variazione: ' + (difference > 0 ? '+' : '') + ((difference / previousTotal) * 100).toFixed(1).replace('.', ',') + '%'
+      : 'Mese precedente: 0,00 € · variazione percentuale non calcolabile perché il totale precedente è zero.';
+
+    var chartMonths = sixMonthKeys(spendingTrendMonth);
+    var totals = chartMonths.map(function (month) {
+      return round2(filteredEvents.reduce(function (total, event) {
+        return total + (event.month === month ? event.amount : 0);
+      }, 0));
+    });
+    var maxTotal = Math.max.apply(null, totals.concat([0]));
+    var hasChartData = totals.some(function (total) { return total > 0; });
+    byId('spendingTrendChart').innerHTML = hasChartData
+      ? '<div class="space-y-3">' + chartMonths.map(function (month, index) {
+          var width = maxTotal > 0 ? Math.max(totals[index] > 0 ? 2 : 0, (totals[index] / maxTotal) * 100) : 0;
+          return '<div class="grid grid-cols-[5.5rem_minmax(0,1fr)_5.5rem] items-center gap-2">' +
+            '<span class="text-10px text-slate-400 truncate">' + esc(monthLabel(month)) + '</span>' +
+            '<div class="spending-trend-track" aria-hidden="true"><div class="spending-trend-bar" style="width:' + width + '%"></div></div>' +
+            '<span class="text-10px text-right font-semibold text-slate-200">' + eur(totals[index]) + '</span>' +
+          '</div>';
+        }).join('') + '</div>'
+      : '<p class="text-xs text-slate-500 text-center py-5">Nessuna uscita effettiva disponibile per questa tipologia negli ultimi sei mesi.</p>';
+
+    byId('spendingTrendMonthsTable').innerHTML = chartMonths.map(function (month, index) {
+      return '<tr class="border-b border-slate-800 last:border-0">' +
+        '<th scope="row" class="py-2 pr-3 font-medium text-slate-300">' + esc(monthLabel(month)) + '</th>' +
+        '<td class="py-2 text-right text-slate-200">' + eur(totals[index]) + '</td>' +
+      '</tr>';
+    }).join('');
+
+    var monthlyDebits = filteredEvents.filter(function (event) {
+      return event.month === spendingTrendMonth && (event.type === 'fixed' || event.type === 'extra');
+    }).sort(function (a, b) { return a.timestamp - b.timestamp; });
+    byId('spendingTrendDebitsTable').innerHTML = monthlyDebits.length
+      ? monthlyDebits.map(function (event) {
+          var typeLabel = event.type === 'fixed' ? 'Spesa fissa' : 'Spesa extra';
+          var name = event.name ? typeLabel + ' · ' + event.name : typeLabel + ' · voce non più disponibile';
+          return '<tr class="border-b border-slate-800 last:border-0">' +
+            '<td class="py-2 pr-3 text-slate-400">' + fmtFull(event.timestamp) + '</td>' +
+            '<th scope="row" class="py-2 pr-3 font-medium text-slate-300">' + esc(name) + '</th>' +
+            '<td class="py-2 text-right text-slate-200">' + eur(event.amount) + '</td>' +
+          '</tr>';
+        }).join('')
+      : '<tr><td colspan="3" class="py-2 text-11px text-slate-500">Nessun addebito fisso o extra corrispondente ai filtri nel mese selezionato.</td></tr>';
+
+    var categoryTotals = {};
+    filteredEvents.forEach(function (event) {
+      if (event.type !== 'pocket' || event.month !== spendingTrendMonth || !event.category) return;
+      categoryTotals[event.category] = (categoryTotals[event.category] || 0) + event.amount;
+    });
+    var categories = CATEGORIES.filter(function (category) { return categoryTotals[category] > 0; });
+    byId('spendingTrendCategoryNote').textContent = spendingTrendType === 'fixed' || spendingTrendType === 'extra'
+      ? 'Gli addebiti fissi ed extra non registrano una categoria di spesa.'
+      : 'Mostra solo le spese Pocket del mese selezionato per cui è disponibile una categoria salvata.';
+    byId('spendingTrendCategories').innerHTML = categories.length
+      ? categories.map(function (category) {
+          return '<div class="flex items-center justify-between gap-3 text-xs"><span class="text-slate-300">' + esc(category) + '</span><span class="font-semibold text-slate-200">' + eur(round2(categoryTotals[category])) + '</span></div>';
+        }).join('')
+      : '<p class="text-11px text-slate-500">Nessun dettaglio categorizzato disponibile per questo mese.</p>';
+  }
+
   function hasUserData() {
     return appData.bankHistory.length > 1 || appData.historicalWeeks.length > 0 ||
       appData.fixedExpenses.length > 0 || appData.extraExpenses.length > 0 ||
@@ -1229,6 +1419,7 @@
   function renderAll() {
     renderPocketTab();
     renderMonthlyTab();
+    renderSpendingTrends();
     renderCondoTab();
     renderArchiveTab();
     renderBackupBanner();
@@ -1258,6 +1449,14 @@
       b.addEventListener('click', function () { selectCategory(b.getAttribute('data-cat')); });
     });
     byId('addExpenseForm').addEventListener('submit', handleAddExpense);
+    byId('spendingTrendMonth').addEventListener('change', function () {
+      spendingTrendMonth = this.value;
+      renderSpendingTrends();
+    });
+    byId('spendingTrendType').addEventListener('change', function () {
+      spendingTrendType = this.value;
+      renderSpendingTrends();
+    });
     byId('weeklyExpenseSearch').addEventListener('input', function () {
       weeklyExpenseSearch = this.value;
       renderWeeklyTransactions();
