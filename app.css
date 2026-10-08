@@ -14,3 +14,49 @@
   .app-update-notice:not(.hidden){display:flex;align-items:center;gap:.75rem;padding:.75rem;border:1px solid rgba(51,65,85,.9);border-radius:1rem;background:#1e293b}
   .app-update-notice p{margin:0;flex:1;font-size:.75rem;color:#cbd5e1}
   .app-update-notice button{padding:.375rem .75rem;border:1px solid rgba(16,185,129,.5);border-radius:.5rem;background:rgba(16,185,129,.18);color:#a7f3d0;font-size:.75rem}
+  .goals-dashboard{min-width:0}
+  .goals-summary{background:linear-gradient(135deg,rgba(30,41,59,.94),rgba(15,23,42,.9));border-color:rgba(71,85,105,.55)}
+  .goal-stat{min-width:0;padding:.75rem;border:1px solid rgba(71,85,105,.45);border-radius:.85rem;background:rgba(15,23,42,.48)}
+  .goal-stat span{display:block;color:#94a3b8;font-size:.65rem;line-height:1.35}
+  .goal-stat strong{display:block;margin-top:.35rem;color:#e2e8f0;font-size:1rem;line-height:1.2;overflow-wrap:anywhere}
+  .goal-unallocated strong{color:#a7f3d0}
+  .goal-next-card,.goal-card{min-width:0;border:1px solid rgba(71,85,105,.5);border-radius:1rem;padding:1rem;background:rgba(15,23,42,.62)}
+  .goal-card{display:flex;flex-direction:column}
+  .goal-theme-teal{--goal-accent:#6ee7b7}
+  .goal-theme-slate{--goal-accent:#cbd5e1}
+  .goal-theme-blue{--goal-accent:#93c5fd}
+  .goal-theme-amber{--goal-accent:#fcd34d}
+  .goal-icon{display:flex;align-items:center;justify-content:center;flex:0 0 2.5rem;width:2.5rem;height:2.5rem;border:1px solid color-mix(in srgb,var(--goal-accent,#6ee7b7) 35%,transparent);border-radius:.85rem;background:color-mix(in srgb,var(--goal-accent,#6ee7b7) 10%,transparent);color:var(--goal-accent,#6ee7b7)}
+  .goal-progress-track{height:.7rem;overflow:hidden;border:1px solid rgba(71,85,105,.7);border-radius:999px;background:#0b1220}
+  .goal-progress-fill{height:100%;border-radius:inherit;background:var(--goal-accent,#6ee7b7);transition:width .25s ease}
+  .goal-progress-label{margin-top:.4rem;color:#cbd5e1;font-size:.7rem;line-height:1.4}
+  .goal-status{flex:none;border:1px solid rgba(71,85,105,.55);border-radius:999px;padding:.2rem .5rem;color:#cbd5e1;background:rgba(30,41,59,.65);font-size:.62rem;white-space:nowrap}
+  .goal-meta{display:flex;flex-wrap:wrap;gap:.45rem .9rem;margin-top:.75rem;color:#94a3b8;font-size:.65rem}
+  .goal-actions{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:auto;padding-top:.85rem}
+  .goal-action,.goal-action-primary,.goal-action-danger{min-height:2.35rem;padding:.45rem .65rem;border:1px solid rgba(71,85,105,.7);border-radius:.65rem;background:rgba(30,41,59,.75);color:#cbd5e1;font-size:.68rem;font-weight:600}
+  .goal-action-primary{border-color:rgba(16,185,129,.4);background:rgba(16,185,129,.14);color:#a7f3d0}
+  .goal-action-danger{border-color:rgba(100,116,139,.65);color:#cbd5e1}
+  .goal-action:hover,.goal-action-primary:hover,.goal-action-danger:hover{background:rgba(51,65,85,.8)}
+  .goal-history{margin-top:.8rem;border-top:1px solid rgba(51,65,85,.55);padding-top:.65rem;color:#94a3b8;font-size:.68rem}
+  .goal-history summary{cursor:pointer}
+  .goal-history ul{max-height:10rem;overflow:auto;margin-top:.55rem}
+  .goal-history li{display:flex;justify-content:space-between;gap:.75rem;padding:.4rem 0;border-bottom:1px solid rgba(51,65,85,.35)}
+  .goal-history li span{min-width:0;overflow-wrap:anywhere}
+  .goal-history li strong{flex:none;color:#cbd5e1}
+  .goal-empty{grid-column:1/-1;padding:1.2rem;border:1px dashed rgba(71,85,105,.55);border-radius:.9rem;color:#94a3b8;text-align:center;font-size:.75rem}
+  .goals-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,17rem),1fr));gap:.75rem;min-width:0}
+  .achievement-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,9rem),1fr));gap:.6rem;min-width:0}
+  .achievement-card{display:flex;align-items:flex-start;gap:.65rem;min-width:0;padding:.75rem;border:1px solid rgba(71,85,105,.42);border-radius:.85rem;background:rgba(15,23,42,.45)}
+  .achievement-card.is-unlocked{border-color:rgba(16,185,129,.32);background:rgba(16,185,129,.055)}
+  .achievement-card.is-locked{opacity:1}
+  .achievement-card.is-locked .achievement-icon{background:rgba(51,65,85,.36);color:#64748b}
+  .achievement-icon{display:flex;align-items:center;justify-content:center;flex:none;width:2rem;height:2rem;border-radius:.7rem;background:rgba(51,65,85,.5);color:#94a3b8}
+  .achievement-card.is-unlocked .achievement-icon{background:rgba(16,185,129,.12);color:#a7f3d0}
+  .achievement-family{color:#94a3b8;font-size:.58rem;line-height:1.3}
+  .goal-theme-choice{display:flex;min-width:0;flex-direction:column;align-items:center;gap:.3rem;border:1px solid rgba(71,85,105,.6);border-radius:.7rem;background:rgba(15,23,42,.65);padding:.55rem .25rem;color:var(--goal-accent,#6ee7b7);font-size:.62rem}
+  .goal-theme-choice.selected{border-color:var(--goal-accent,#6ee7b7);box-shadow:0 0 0 1px color-mix(in srgb,var(--goal-accent,#6ee7b7) 35%,transparent)}
+  .goal-field-error{min-height:.9rem;margin-top:.2rem;color:#fda4af;font-size:.65rem}
+  .goal-dialog{max-height:min(90vh,48rem);overflow-y:auto}
+  nav .nav-btn{min-width:0}
+  nav .nav-btn span{font-size:clamp(8px,2.5vw,10px);white-space:nowrap}
+  @media (prefers-reduced-motion:reduce){.goal-progress-fill,.goal-action,.goal-action-primary,.goal-action-danger{transition:none!important;animation:none!important;scroll-behavior:auto!important}}

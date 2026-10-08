@@ -97,7 +97,6 @@
         }
         try {
           var prepared = window.BudgetApp.prepareData(parsed.data);
-          parsed.data = prepared.data;
           parsed.importSummary = prepared.summary;
         } catch (err) {
           throw new Error('Il file su Drive non ha un formato valido: ' + err.message);
@@ -153,6 +152,7 @@
       setStatus('Salvataggio in corso\u2026');
       var payload = { app: 'budgetapp', schemaVersion: 1, updatedAt: Date.now(), data: window.BudgetApp.getData() };
       return writeBackup(token, res.existing, payload).then(function () {
+        window.BudgetApp.recordAchievementEvent('driveBackup');
         setStatus('Backup salvato su Drive il ' + fmt(payload.updatedAt) + '.');
       });
     }).catch(function (err) {

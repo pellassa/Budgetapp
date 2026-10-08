@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0f172a">
 <meta name="apple-mobile-web-app-title" content="MyLittleBudget">
-<meta name="app-shell-version" content="1">
+<meta name="app-shell-version" content="2">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
 <link rel="apple-touch-icon" href="./icons/icon-192.png">
@@ -46,6 +46,7 @@
     <p class="text-11px text-slate-300 flex-1">È disponibile una nuova versione di MyLittleBudget.</p>
     <button type="button" id="appUpdateButton" class="text-11px bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 border border-emerald-500/40 px-3 py-1.5 rounded-lg">Aggiorna</button>
   </div>
+  <p id="dataStorageWarning" class="hidden mb-4 rounded-xl border border-slate-600 bg-slate-800 px-3 py-2 text-xs text-slate-200" role="alert"></p>
 
   <div id="tab-pocket" class="space-y-4">
     <div class="glass rounded-2xl p-5 shadow-xl border border-slate-700/50">
@@ -115,6 +116,7 @@
           </select>
         </div>
       </div>
+      <button type="button" id="resetWeeklyExpenseFiltersBtn" class="hidden mb-3 text-10px font-medium text-slate-300 underline underline-offset-2">Azzera ricerca e categoria</button>
       <div id="weeklyTransactionsList" class="space-y-2 max-h-64 overflow-y-auto pr-1"></div>
     </div>
   </div>
@@ -325,6 +327,64 @@
 
     <p class="text-10px text-slate-500 leading-snug px-1">Lo storico aggregato delle settimane chiuse non conserva i dettagli delle singole spese. Per Pocket, i mesi passati includono solo i movimenti datati ancora disponibili nel registro del conto; le categorie sono mostrate solo per spese dettagliate con categoria salvata. Eventuali movimenti storici non più disponibili non possono essere ricostruiti.</p>
   </div>
+
+  <div id="tab-goals" class="hidden space-y-4 goals-dashboard">
+    <section class="glass goals-summary rounded-2xl p-5">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <p class="text-10px uppercase tracking-wider font-bold text-slate-400">Pianificazione personale</p>
+          <h2 class="text-xl font-bold text-white mt-1">Obiettivi</h2>
+          <p class="text-11px text-slate-400 mt-1">Una ripartizione visiva dei risparmi: non modifica il saldo del conto né il fondo Leftover.</p>
+        </div>
+        <button type="button" id="addGoalBtn" class="shrink-0 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-200 border border-emerald-500/30 font-semibold px-3 py-2 rounded-xl text-xs"><i class="fa-solid fa-plus mr-1" aria-hidden="true"></i>Nuovo</button>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-5">
+        <div class="goal-stat"><span>Totale accantonato</span><strong id="goalsTotalSaved">0,00 €</strong></div>
+        <div class="goal-stat"><span>Obiettivi attivi</span><strong id="goalsActiveCount">0</strong></div>
+        <div class="goal-stat goal-unallocated"><span>Non allocato</span><strong id="goalsUnallocated">0,00 €</strong></div>
+      </div>
+      <p id="goalsAllocationNotice" class="hidden mt-3 text-xs text-slate-300" role="status">Hai allocato più del risparmio registrato</p>
+    </section>
+
+    <section class="glass goal-next rounded-2xl p-4" aria-labelledby="nextGoalHeading">
+      <div class="flex items-center gap-2 mb-3">
+        <i class="fa-solid fa-flag-checkered text-emerald-300" aria-hidden="true"></i>
+        <h3 id="nextGoalHeading" class="text-sm font-semibold text-slate-100">Prossimo traguardo</h3>
+      </div>
+      <div id="nextGoalContent"></div>
+    </section>
+
+    <section class="glass rounded-2xl p-4" aria-labelledby="goalListHeading">
+      <div class="flex items-center justify-between gap-3 mb-3">
+        <div>
+          <h3 id="goalListHeading" class="text-sm font-semibold text-slate-100">I tuoi obiettivi</h3>
+          <p class="text-10px text-slate-500 mt-1">Puoi registrare versamenti e prelievi senza modificare altri saldi.</p>
+        </div>
+        <label for="goalStatusFilter" class="sr-only">Filtra obiettivi per stato</label>
+        <select id="goalStatusFilter" class="max-w-[9rem] bg-slate-900 border border-slate-700 rounded-lg px-2 py-2 text-xs text-slate-200">
+          <option value="all">Tutti</option><option value="active">Attivi</option><option value="completed">Completati</option><option value="archived">Archiviati</option>
+        </select>
+      </div>
+      <div id="goalsList" class="goals-grid"></div>
+    </section>
+
+    <section class="glass rounded-2xl p-4" aria-labelledby="achievementsHeading">
+      <div class="flex flex-wrap items-end justify-between gap-3 mb-3">
+        <div>
+          <h3 id="achievementsHeading" class="text-sm font-semibold text-slate-100">Traguardi</h3>
+          <p id="achievementCount" class="text-10px text-slate-400 mt-1">0 sbloccati</p>
+        </div>
+        <label for="achievementFilter" class="sr-only">Filtra traguardi</label>
+        <select id="achievementFilter" class="max-w-[10rem] bg-slate-900 border border-slate-700 rounded-lg px-2 py-2 text-xs text-slate-200">
+          <option value="all">Tutti</option><option value="unlocked">Sbloccati</option><option value="locked">Da scoprire</option>
+        </select>
+      </div>
+      <p id="achievementAnnouncement" class="sr-only" aria-live="polite" aria-atomic="true"></p>
+      <div id="achievementsList" class="achievement-grid"></div>
+      <p class="text-10px text-slate-500 mt-3">Questi traguardi sono privati e restano nei dati locali e nei backup scelti da te. Le attività non tracciabili in modo affidabile non vengono simulate.</p>
+    </section>
+    <p id="goalsStatus" class="sr-only" aria-live="polite"></p>
+  </div>
 </main>
 
 <div id="resetModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
@@ -405,11 +465,40 @@
   </div>
 </div>
 
+<div id="goalModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4" aria-hidden="true">
+  <div class="glass goal-dialog w-full max-w-md rounded-2xl p-5 border border-slate-700" role="dialog" aria-modal="true" aria-labelledby="goalModalTitle" aria-describedby="goalModalDescription" tabindex="-1">
+    <h2 id="goalModalTitle" class="text-lg font-bold text-white">Nuovo obiettivo</h2>
+    <p id="goalModalDescription" class="text-xs text-slate-400 mt-1">Imposta un nome, un importo e, se vuoi, una data.</p>
+    <form id="goalForm" class="space-y-3 mt-4" novalidate>
+      <div><label for="goalName" class="block text-xs font-medium text-slate-300 mb-1">Nome</label><input id="goalName" name="name" type="text" maxlength="80" required autocomplete="off" class="w-full bg-slate-950/70 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"><p id="goalNameError" class="goal-field-error" aria-live="polite"></p></div>
+      <div><label for="goalTarget" class="block text-xs font-medium text-slate-300 mb-1">Importo obiettivo (€)</label><input id="goalTarget" name="target" type="number" min="0.01" step="0.01" inputmode="decimal" required class="w-full bg-slate-950/70 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"><p id="goalTargetError" class="goal-field-error" aria-live="polite"></p></div>
+      <div><label for="goalDeadline" class="block text-xs font-medium text-slate-300 mb-1">Scadenza <span class="text-slate-500">(facoltativa)</span></label><input id="goalDeadline" name="deadline" type="date" class="w-full bg-slate-950/70 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"><p id="goalDeadlineError" class="goal-field-error" aria-live="polite"></p></div>
+      <fieldset><legend class="block text-xs font-medium text-slate-300 mb-2">Tema</legend><div id="goalThemeOptions" class="grid grid-cols-4 gap-2"></div></fieldset>
+      <p id="goalFormError" class="text-xs text-rose-300" role="alert"></p>
+      <div class="flex gap-2 pt-1"><button type="button" id="cancelGoalBtn" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2.5 rounded-xl text-xs">Annulla</button><button type="submit" class="flex-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold py-2.5 rounded-xl text-xs">Salva obiettivo</button></div>
+    </form>
+  </div>
+</div>
+
+<div id="goalOperationModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4" aria-hidden="true">
+  <div class="glass goal-dialog w-full max-w-sm rounded-2xl p-5 border border-slate-700" role="dialog" aria-modal="true" aria-labelledby="goalOperationTitle" aria-describedby="goalOperationDescription" tabindex="-1">
+    <h2 id="goalOperationTitle" class="text-lg font-bold text-white">Versamento</h2>
+    <p id="goalOperationDescription" class="text-xs text-slate-400 mt-1"></p>
+    <form id="goalOperationForm" class="space-y-3 mt-4" novalidate>
+      <div><label for="goalOperationAmount" class="block text-xs font-medium text-slate-300 mb-1">Importo (€)</label><input id="goalOperationAmount" type="number" min="0.01" step="0.01" inputmode="decimal" required class="w-full bg-slate-950/70 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"><p id="goalOperationAmountError" class="goal-field-error" aria-live="polite"></p></div>
+      <div><label for="goalOperationNote" class="block text-xs font-medium text-slate-300 mb-1">Nota <span class="text-slate-500">(facoltativa)</span></label><input id="goalOperationNote" type="text" maxlength="240" class="w-full bg-slate-950/70 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"></div>
+      <p id="goalOperationError" class="text-xs text-rose-300" role="alert"></p>
+      <div class="flex gap-2 pt-1"><button type="button" id="cancelGoalOperationBtn" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2.5 rounded-xl text-xs">Annulla</button><button type="submit" id="saveGoalOperationBtn" class="flex-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold py-2.5 rounded-xl text-xs">Registra</button></div>
+    </form>
+  </div>
+</div>
+
 <nav class="glass fixed bottom-0 left-0 right-0 z-40 border-t border-slate-800 px-2 py-2">
-  <div class="max-w-md mx-auto grid grid-cols-5 gap-1">
+  <div class="max-w-3xl mx-auto grid grid-cols-6 gap-1">
     <button type="button" id="nav-pocket" data-tab="pocket" class="nav-btn flex flex-col items-center py-1.5 px-2 rounded-xl transition"><i class="fa-solid fa-coins text-base mb-1"></i><span class="text-10px font-semibold">Pocket</span></button>
     <button type="button" id="nav-monthly" data-tab="monthly" class="nav-btn flex flex-col items-center py-1.5 px-2 rounded-xl transition"><i class="fa-solid fa-chart-pie text-base mb-1"></i><span class="text-10px font-semibold">Mese</span></button>
     <button type="button" id="nav-trends" data-tab="trends" class="nav-btn flex flex-col items-center py-1.5 px-2 rounded-xl transition"><i class="fa-solid fa-chart-column text-base mb-1"></i><span class="text-10px font-semibold">Andamento</span></button>
+    <button type="button" id="nav-goals" data-tab="goals" class="nav-btn flex flex-col items-center py-1.5 px-2 rounded-xl transition"><i class="fa-solid fa-bullseye text-base mb-1"></i><span class="text-10px font-semibold">Obiettivi</span></button>
     <button type="button" id="nav-condo" data-tab="condo" class="nav-btn flex flex-col items-center py-1.5 px-2 rounded-xl transition"><i class="fa-solid fa-building-columns text-base mb-1"></i><span class="text-10px font-semibold">Conto</span></button>
     <button type="button" id="nav-archive" data-tab="archive" class="nav-btn flex flex-col items-center py-1.5 px-2 rounded-xl transition"><i class="fa-solid fa-box-archive text-base mb-1"></i><span class="text-10px font-semibold">Archivio</span></button>
   </div>
