@@ -1260,6 +1260,152 @@
       appData.currentWeek.expenses.length > 0 || (parseFloat(appData.monthlyIncome) || 0) > 0;
   }
 
+  function isRecord(value) {
+    return !!value && typeof value === 'object' && !Array.isArray(value);
+  }
+
+  function validateBackupData(data) {
+    if (!isRecord(data) || !isRecord(data.currentWeek) ||
+        !Array.isArray(data.currentWeek.expenses) || !Array.isArray(data.fixedExpenses)) {
+      throw new Error('Il file non contiene una struttura di backup riconosciuta.');
+    }
+
+    var arrayPaths = [
+      { value: data.currentWeek.expenses, name: 'spese Pocket' },
+      { value: data.fixedExpenses, name: 'spese fisse' },
+      { value: data.extraExpenses, name: 'spese extra' },
+      { value: data.historicalWeeks, name: 'settimane archiviate' },
+      { value: data.bankHistory, name: 'movimenti del conto' }
+    ];
+    arrayPaths.forEach(function (entry) {
+      if (entry.value === undefined) return;
+      if (!Array.isArray(entry.value) || !entry.value.every(isRecord)) {
+        throw new Error('La struttura di ' + entry.name + ' non è valida.');
+      }
+    });
+    if (data.salaryPosted !== undefined &&
+        (!Array.isArray(data.salaryPosted) || !data.salaryPosted.every(function (key) { return typeof key === 'string'; }))) {
+      throw new Error('Lo storico degli stipendi non è valido.');
+    }
+
+    function checkNumber(value, name, allowNegative) {
+      if (value === undefined || value === null) return;
+      if (typeof value !== 'number' || !isFinite(value) || (!allowNegative && value < 0)) {
+        throw new Error('Il valore di ' + name + ' non è valido.');
+      }
+    }
+
+    checkNumber(data.bankBalance, 'saldo conto', true);
+    checkNumber(data.monthlyIncome, 'entrata mensile', true);
+    checkNumber(data.accumulatedSavingsFromLeftovers, 'risparmi accumulati', true);
+    checkNumber(data.weeklyTarget, 'budget settimanale', false);
+    checkNumber(data.currentWeek.initialBudget, 'budget Pocket', false);
+    if (data.lastBackup !== undefined && data.lastBackup !== null) checkNumber(data.lastBackup, 'data del backup', false);
+    if (data.salaryDay !== undefined && data.salaryDay !== null && data.salaryDay !== '' &&
+        (typeof data.salaryDay !== 'number' || !isFinite(data.salaryDay) || data.salaryDay < 1 || data.salaryDay > 31)) {
+      throw new Error('Il giorno di accredito dello stipendio non è valido.');
+    }
+    if (data.currentWeek.startDate !== undefined && typeof data.currentWeek.startDate !== 'string') {
+      throw new Error('La data della settimana corrente non è valida.');
+    }
+    if (data.currentWeek.endDate !== undefined && typeof data.currentWeek.endDate !== 'string') {
+      throw new Error('La data della settimana corrente non è valida.');
+    }
+
+    function validateExpense(expense, requireTitle, label) {
+      if (requireTitle && typeof expense.title !== 'string') throw new Error('Una spesa Pocket non contiene un titolo valido.');
+      if (!requireTitle && typeof expense.name !== 'string') throw new Error('Una spesa ricorrente non contiene un nome valido.');
+      if (!Object.prototype.hasOwnProperty.call(expense, 'amount')) {
+        throw new Error('Una voce di ' + label + ' non contiene un importo.');
+      }
+      if (typeof expense.amount !== 'number') throw new Error('L’importo di ' + label + ' non è valido.');
+      checkNumber(expense.amount, 'importo di ' + label, false);
+      ['title', 'name', 'category', 'date'].forEach(function (key) {
+        if (expense[key] !== undefined && expense[key] !== null && typeof expense[key] !== 'string') {
+          throw new Error('Un campo descrittivo di una spesa non è valido.');
+        }
+      });
+      if (expense.id !== undefined && typeof expense.id !== 'number' && typeof expense.id !== 'string') {
+        throw new Error('L’identificativo di una spesa non è valido.');
+      }
+    }
+    data.currentWeek.expenses.forEach(function (expense) { validateExpense(expense, true, 'spese Pocket'); });
+    data.fixedExpenses.forEach(function (expense) { validateExpense(expense, false, 'spese fisse'); });
+    (data.extraExpenses || []).forEach(function (expense) { validateExpense(expense, false, 'spese extra'); });
+
+    data.fixedExpenses.forEach(function (expense) {
+      if (expense.day !== undefined && expense.day !== null && expense.day !== '' &&
+          (typeof expense.day !== 'number' || !isFinite(expense.day) || expense.day < 1 || expense.day > 31)) {
+        throw new Error('Il giorno di addebito di una spesa fissa non è valido.');
+      }
+      if (expense.posted !== undefined && expense.posted !== null && !Array.isArray(expense.posted)) {
+        throw new Error('Lo storico degli addebiti fissi non è valido.');
+      }
+      if (Array.isArray(expense.posted) && !expense.posted.every(function (key) { return typeof key === 'string'; })) {
+        throw new Error('Lo storico degli addebiti fissi non è valido.');
+      }
+    });
+    (data.extraExpenses || []).forEach(function (expense) {
+      if (expense.posted !== undefined && expense.posted !== null && typeof expense.posted !== 'boolean') {
+        throw new Error('Lo stato di addebito di una spesa extra non è valido.');
+      }
+    });
+
+    (data.historicalWeeks || []).forEach(function (week) {
+      ['budget', 'spent', 'leftover'].forEach(function (key) {
+        if (Object.prototype.hasOwnProperty.call(week, key)) checkNumber(week[key], 'riepilogo di una settimana', key === 'leftover');
+      });
+    });
+    (data.bankHistory || []).forEach(function (movement) {
+      ['t', 'delta', 'balance'].forEach(function (key) {
+        if (Object.prototype.hasOwnProperty.call(movement, key)) checkNumber(movement[key], 'movimento del conto', true);
+      });
+      ['note', 'src'].forEach(function (key) {
+        if (movement[key] !== undefined && movement[key] !== null && typeof movement[key] !== 'string') {
+          throw new Error('Un movimento del conto contiene un campo non valido.');
+        }
+      });
+    });
+
+    if (data.categoryLimits !== undefined && data.categoryLimits !== null &&
+        (!isRecord(data.categoryLimits) || Object.keys(data.categoryLimits).some(function (category) {
+          var limit = data.categoryLimits[category];
+          return typeof limit !== 'number' || !isFinite(limit) || limit < 0;
+        }))) {
+      throw new Error('La struttura dei limiti per categoria non è valida.');
+    }
+  }
+
+  function prepareImportedData(data) {
+    validateBackupData(data);
+    return normalize(clone(data));
+  }
+
+  function backupImportSummary(data) {
+    var lastBackupText = data.lastBackup && isFinite(data.lastBackup)
+      ? fmtFull(data.lastBackup)
+      : 'non indicata';
+    return 'Riepilogo del backup validato:\n' +
+      '• Spese Pocket correnti: ' + data.currentWeek.expenses.length + '\n' +
+      '• Spese fisse: ' + data.fixedExpenses.length + '\n' +
+      '• Spese extra: ' + data.extraExpenses.length + '\n' +
+      '• Settimane archiviate: ' + data.historicalWeeks.length + '\n' +
+      '• Ultimo backup: ' + lastBackupText;
+  }
+
+  function replacePreparedData(data) {
+    var previousData = appData;
+    appData = data;
+    try {
+      processRecurring();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+    } catch (err) {
+      appData = previousData;
+      throw new Error('Importazione non completata: impossibile salvare i dati su questo dispositivo.');
+    }
+    renderAll();
+  }
+
   function renderBackupBanner() {
     var banner = byId('backupBanner');
     var show = false, msg = '';
@@ -1317,7 +1463,7 @@
     } catch (e) { candidate = null; }
 
     if (candidate && navigator.share) {
-      return navigator.share({ files: [candidate], title: 'Backup Budget', text: 'Backup del ' + new Date().toLocaleDateString('it-IT') })
+      return navigator.share({ files: [candidate], title: 'MyLittleBudget', text: 'Backup del ' + new Date().toLocaleDateString('it-IT') })
         .then(function () { markBackup(p.data.lastBackup); })
         .catch(function (err) {
           if (err && err.name === 'AbortError') return;
@@ -1365,20 +1511,41 @@
   function importDataJSON(ev) {
     var file = ev.target.files[0];
     if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      alert("Il file supera il limite di 10 MB e non è stato importato.");
+      ev.target.value = '';
+      return;
+    }
+    if (file.size === 0) {
+      alert("Il file è vuoto e non è stato importato.");
+      ev.target.value = '';
+      return;
+    }
     var reader = new FileReader();
     reader.onload = function (e) {
       try {
         var parsed = JSON.parse(e.target.result);
-        if (!parsed.currentWeek || !Array.isArray(parsed.fixedExpenses)) throw new Error('struttura non valida');
-        if (!confirm('Importare il backup? Sostituirà i dati presenti su questo dispositivo.')) { ev.target.value = ''; return; }
-        appData = normalize(parsed);
-        processRecurring();
-        saveData();
+        var candidate = prepareImportedData(parsed);
+        var summary = backupImportSummary(candidate) + '\n\n' +
+          'Importare il backup? Sostituirà i dati presenti su questo dispositivo.';
+        if (!confirm(summary)) { ev.target.value = ''; return; }
+        replacePreparedData(candidate);
         alert('Dati importati con successo!');
-      } catch (err) { alert("Errore durante l'importazione del file JSON."); }
+      } catch (err) {
+        alert("Errore durante l'importazione: " + (err && err.message ? err.message : 'file JSON non valido.'));
+      }
       ev.target.value = '';
     };
-    reader.readAsText(file);
+    reader.onerror = function () {
+      alert("Impossibile leggere il file di backup.");
+      ev.target.value = '';
+    };
+    try {
+      reader.readAsText(file);
+    } catch (err) {
+      alert("Impossibile leggere il file di backup.");
+      ev.target.value = '';
+    }
   }
 
   function openResetModal() {
@@ -1473,6 +1640,7 @@
     });
     document.addEventListener('keydown', handleCategoryLimitsModalKeydown);
     byId('importFileInput').addEventListener('change', importDataJSON);
+    initServiceWorker();
     byId('monthlyIncomeInput').addEventListener('change', function () { appData.monthlyIncome = parseNum(this.value) || 0; processRecurring(); saveData(); });
     byId('salaryDayInput').addEventListener('change', function () { setSalaryDay(this.value); });
     byId('bankBalanceInput').addEventListener('change', function () {
@@ -1527,6 +1695,42 @@
     switchTab(TABS.indexOf(start) >= 0 ? start : 'pocket');
   }
 
+  function initServiceWorker() {
+    if (!navigator.serviceWorker) return;
+    var notice = byId('appUpdateNotice');
+    var updateButton = byId('appUpdateButton');
+    var registration = null;
+    var reloadAfterUpdate = false;
+
+    function showUpdateNotice() {
+      if (notice) notice.classList.remove('hidden');
+    }
+
+    navigator.serviceWorker.addEventListener('controllerchange', function () {
+      if (reloadAfterUpdate) window.location.reload();
+    });
+    navigator.serviceWorker.register('./sw.js', { scope: './' }).then(function (reg) {
+      registration = reg;
+      if (reg.waiting && navigator.serviceWorker.controller) showUpdateNotice();
+      reg.addEventListener('updatefound', function () {
+        var installing = reg.installing;
+        if (!installing) return;
+        installing.addEventListener('statechange', function () {
+          if (installing.state === 'installed' && navigator.serviceWorker.controller) showUpdateNotice();
+        });
+      });
+      if (updateButton) {
+        updateButton.addEventListener('click', function () {
+          if (!registration || !registration.waiting) return;
+          reloadAfterUpdate = true;
+          registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+        });
+      }
+    }).catch(function (err) {
+      console.warn('Service worker non disponibile; l’app continua in modalità normale.', err);
+    });
+  }
+
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
     /*
@@ -1539,15 +1743,14 @@
       return clone(appData);
     },
 
+    prepareData: function (data) {
+      var candidate = prepareImportedData(data);
+      return { data: candidate, summary: backupImportSummary(candidate) };
+    },
+
     replaceData: function (data) {
-      appData = normalize(data);
-      processRecurring();
-
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
-      } catch (e) {}
-
-      renderAll();
+      var candidate = prepareImportedData(data);
+      replacePreparedData(candidate);
       return clone(appData);
     },
 

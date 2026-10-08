@@ -3,10 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Budget Completo</title>
+<title>MyLittleBudget</title>
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0f172a">
+<meta name="apple-mobile-web-app-title" content="MyLittleBudget">
+<meta name="app-shell-version" content="1">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 <link rel="stylesheet" href="desktop-layout.css">
@@ -16,9 +21,9 @@
 
 <header class="glass sticky top-0 z-40 px-5 py-4 border-b border-slate-800 flex items-center justify-between">
   <div class="flex items-center gap-3">
-    <div class="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400"><i class="fa-solid fa-wallet text-lg"></i></div>
+    <div class="w-9 h-9 rounded-xl overflow-hidden border border-emerald-500/30" role="img" aria-label="Logo MyLittleBudget, segnaposto"><img src="./icons/icon-192.png" alt="" class="w-full h-full object-cover"></div>
     <div>
-      <h1 class="font-bold text-base tracking-tight text-white leading-none">Budget Completo</h1>
+      <h1 class="font-bold text-base tracking-tight text-white leading-none">MyLittleBudget</h1>
       <p class="text-11px text-slate-400 font-medium mt-0.5" id="headerDateRange">Ciclo Settimanale</p>
     </div>
   </div>
@@ -34,6 +39,12 @@
     <p id="backupBannerText" class="text-11px text-amber-200 flex-1">Fai un backup dei tuoi dati.</p>
     <button type="button" onclick="shareBackup()" class="text-11px bg-amber-500/20 text-amber-200 border border-amber-500/40 px-2.5 py-1 rounded-lg">Backup</button>
     <button type="button" onclick="dismissBackupBanner()" class="text-amber-300/70 text-xs"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+
+  <div id="appUpdateNotice" class="app-update-notice hidden mb-4 rounded-2xl p-3 bg-slate-800 border border-slate-700 flex items-center gap-3" role="status" aria-live="polite">
+    <i class="fa-solid fa-arrow-rotate-right text-emerald-400" aria-hidden="true"></i>
+    <p class="text-11px text-slate-300 flex-1">È disponibile una nuova versione di MyLittleBudget.</p>
+    <button type="button" id="appUpdateButton" class="text-11px bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 border border-emerald-500/40 px-3 py-1.5 rounded-lg">Aggiorna</button>
   </div>
 
   <div id="tab-pocket" class="space-y-4">
