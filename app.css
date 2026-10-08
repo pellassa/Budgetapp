@@ -11,3 +11,6 @@
   .category-limit-progress{height:100%;border-radius:9999px;transition:width .3s ease}
   .spending-trend-track{height:10px;background:rgba(15,23,42,.8);border:1px solid rgba(51,65,85,.6);border-radius:9999px;overflow:hidden}
   .spending-trend-bar{height:100%;min-width:0;background:#38bdf8;border-radius:9999px}
+  .app-update-notice:not(.hidden){display:flex;align-items:center;gap:.75rem;padding:.75rem;border:1px solid rgba(51,65,85,.9);border-radius:1rem;background:#1e293b}
+  .app-update-notice p{margin:0;flex:1;font-size:.75rem;color:#cbd5e1}
+  .app-update-notice button{padding:.375rem .75rem;border:1px solid rgba(16,185,129,.5);border-radius:.5rem;background:rgba(16,185,129,.18);color:#a7f3d0;font-size:.75rem}

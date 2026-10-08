@@ -91,8 +91,16 @@
       .then(function (r) { return r.text(); })
       .then(function (txt) {
         var parsed = JSON.parse(txt);
-        if (!parsed || !parsed.data || !parsed.data.currentWeek || !Array.isArray(parsed.data.fixedExpenses)) {
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed) ||
+            !parsed.data || typeof parsed.data !== 'object' || Array.isArray(parsed.data)) {
           throw new Error('Il file su Drive non ha un formato valido.');
+        }
+        try {
+          var prepared = window.BudgetApp.prepareData(parsed.data);
+          parsed.data = prepared.data;
+          parsed.importSummary = prepared.summary;
+        } catch (err) {
+          throw new Error('Il file su Drive non ha un formato valido: ' + err.message);
         }
         return parsed;
       });
@@ -168,7 +176,8 @@
         var warn = window.BudgetApp.hasData()
           ? '\n\nI dati attuali di questo dispositivo verranno SOSTITUITI. Ti consiglio prima un backup JSON da Archivio.'
           : '';
-        if (!confirm('Ripristinare il backup salvato il ' + fmt(remote.updatedAt || existing.modifiedTime) + '?' + warn)) {
+        if (!confirm(remote.importSummary + '\n\nBackup salvato il ' + fmt(remote.updatedAt || existing.modifiedTime) +
+            '.\n\nRipristinare i dati?' + warn)) {
           setStatus('Ripristino annullato. Nessuna modifica ai dati.');
           return;
         }

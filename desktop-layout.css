@@ -1,4 +1,4 @@
-/* Desktop dashboard enhancement for Budget Completo.
+/* Desktop dashboard enhancement for MyLittleBudget.
    Mobile remains unchanged. */
 @media (min-width: 1024px) {
   :root { --desktop-sidebar: 14.25rem; }
