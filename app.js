@@ -4,6 +4,7 @@
   var STORAGE_KEY = 'userbudgetpwadata';
   var TABS = ['pocket', 'monthly', 'condo', 'archive'];
   var CAT_ICONS = { 'Spesa': 'fa-cart-shopping', 'Benzina': 'fa-gas-pump', 'Caffè': 'fa-mug-hot', 'Svago': 'fa-utensils', 'Altro': 'fa-ellipsis' };
+  var CATEGORIES = ['Spesa', 'Benzina', 'Caffè', 'Svago', 'Altro'];
   var CAT_ON  = 'cat-btn active bg-emerald-500/20 border border-emerald-500/50 text-emerald-300 p-2 rounded-xl text-center flex flex-col items-center gap-1 transition';
   var CAT_OFF = 'cat-btn bg-slate-800 border border-slate-700 text-slate-400 p-2 rounded-xl text-center flex flex-col items-center gap-1 transition';
   var NAV_ON  = 'nav-btn active flex flex-col items-center py-1.5 px-2 rounded-xl text-emerald-400 transition';
@@ -24,6 +25,7 @@
   };
   var bannerDismissed = false;
   var showAllLedger = false;
+  var categoryLimitsReturnFocus = null;
 
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
   function round2(n) { return Math.round(n * 100) / 100; }
@@ -103,7 +105,8 @@
       currentWeek: { startDate: r[0], endDate: r[1], initialBudget: DEFAULT_WEEKLY_TARGET, expenses: [] },
       fixedExpenses: [],
       extraExpenses: [],
-      historicalWeeks: []
+      historicalWeeks: [],
+      categoryLimits: {}
     };
   }
 
@@ -150,6 +153,7 @@
     if (!d || typeof d !== 'object') return base;
     var nowKey = ymKey(new Date());
     for (var k in base) { if (k !== 'bankHistory' && (d[k] === undefined || d[k] === null) && k !== 'salaryDay' && k !== 'lastBackup') d[k] = base[k]; }
+    if (!d.categoryLimits || typeof d.categoryLimits !== 'object' || Array.isArray(d.categoryLimits)) d.categoryLimits = {};
     if (d.salaryDay === undefined) d.salaryDay = null;
     if (d.lastBackup === undefined) d.lastBackup = null;
     if (!d.currentWeek || typeof d.currentWeek !== 'object') d.currentWeek = base.currentWeek;
@@ -681,6 +685,7 @@
     byId('pocketSpent').textContent = eur(spent);
     byId('pocketInitial').textContent = eur(w.initialBudget);
     byId('expenseCount').textContent = w.expenses.length + (w.expenses.length === 1 ? ' transazione' : ' transazioni');
+    renderCategoryLimits();
 
     var list = byId('weeklyTransactionsList');
     if (!w.expenses.length) {
@@ -700,6 +705,113 @@
           '<button type="button" data-del-week="' + x.id + '" class="text-slate-500 hover:text-rose-400 text-xs p-1"><i class="fa-solid fa-xmark"></i></button>' +
         '</div></div>';
     }).join('');
+  }
+
+  function renderCategoryLimits() {
+    var el = byId('categoryLimitsList');
+    var active = CATEGORIES.filter(function (category) {
+      return Number(appData.categoryLimits[category]) > 0;
+    });
+    if (!active.length) {
+      el.innerHTML = '<p class="text-11px text-slate-500">Imposta un limite facoltativo per monitorare le spese della settimana.</p>';
+      return;
+    }
+    el.innerHTML = active.map(function (category) {
+      var limit = Number(appData.categoryLimits[category]);
+      var spent = round2(appData.currentWeek.expenses.reduce(function (total, expense) {
+        return expense.category === category ? total + (Number(expense.amount) || 0) : total;
+      }, 0));
+      var percentage = limit > 0 ? (spent / limit) * 100 : 0;
+      var progress = Math.min(100, percentage);
+      var color = percentage >= 100 ? 'rose' : (percentage >= 80 ? 'amber' : 'emerald');
+      var fillClass = {
+        emerald: 'bg-emerald-500',
+        amber: 'bg-amber-500',
+        rose: 'bg-rose-500'
+      }[color];
+      return '<div>' +
+        '<div class="flex items-center justify-between gap-3 mb-1.5">' +
+          '<span class="text-xs font-medium text-slate-200"><i class="fa-solid ' + CAT_ICONS[category] + ' w-5 text-slate-400" aria-hidden="true"></i>' + category + '</span>' +
+          '<span class="text-11px font-semibold text-slate-300">' + eur(spent) + ' / ' + eur(limit) + '</span>' +
+        '</div>' +
+        '<div class="category-limit-track" role="progressbar" aria-label="' + category + ': speso ' + eur(spent) + ' su ' + eur(limit) + '" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + Math.min(100, percentage).toFixed(0) + '">' +
+          '<div class="category-limit-progress ' + fillClass + '" style="width:' + progress + '%"></div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  function openCategoryLimitsModal() {
+    categoryLimitsReturnFocus = document.activeElement;
+    CATEGORIES.forEach(function (category) {
+      var input = byId('categoryLimit-' + category);
+      input.value = Number(appData.categoryLimits[category]) > 0 ? appData.categoryLimits[category] : '';
+      input.setCustomValidity('');
+    });
+    var modal = byId('categoryLimitsModal');
+    modal.classList.remove('hidden');
+    modal.setAttribute('aria-hidden', 'false');
+    byId('categoryLimit-Spesa').focus();
+  }
+
+  function closeCategoryLimitsModal() {
+    var modal = byId('categoryLimitsModal');
+    if (modal.classList.contains('hidden')) return;
+    modal.classList.add('hidden');
+    modal.setAttribute('aria-hidden', 'true');
+    if (categoryLimitsReturnFocus && document.contains(categoryLimitsReturnFocus)) categoryLimitsReturnFocus.focus();
+    categoryLimitsReturnFocus = null;
+  }
+
+  function saveCategoryLimits(e) {
+    e.preventDefault();
+    var limits = {};
+    var invalidInput = null;
+    CATEGORIES.forEach(function (category) {
+      var input = byId('categoryLimit-' + category);
+      input.setCustomValidity('');
+      if (input.value === '') {
+        if (!input.validity.valid) {
+          input.setCustomValidity('Inserisci un importo valido e non negativo.');
+          invalidInput = invalidInput || input;
+        }
+        return;
+      }
+      var value = parseNum(input.value);
+      if (!input.validity.valid || !isFinite(value) || value < 0) {
+        input.setCustomValidity('Inserisci un importo valido e non negativo.');
+        invalidInput = invalidInput || input;
+        return;
+      }
+      if (value > 0) limits[category] = round2(value);
+    });
+    if (invalidInput) {
+      invalidInput.reportValidity();
+      return;
+    }
+    appData.categoryLimits = limits;
+    saveData();
+    closeCategoryLimitsModal();
+  }
+
+  function handleCategoryLimitsModalKeydown(e) {
+    var modal = byId('categoryLimitsModal');
+    if (modal.classList.contains('hidden')) return;
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      closeCategoryLimitsModal();
+      return;
+    }
+    if (e.key !== 'Tab') return;
+    var focusable = modal.querySelectorAll('button:not([disabled]), input:not([disabled])');
+    var first = focusable[0], last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
   }
 
   function renderDonut(income, fixed, pocket, extra, net) {
@@ -1114,6 +1226,13 @@
       b.addEventListener('click', function () { selectCategory(b.getAttribute('data-cat')); });
     });
     byId('addExpenseForm').addEventListener('submit', handleAddExpense);
+    byId('manageCategoryLimitsBtn').addEventListener('click', openCategoryLimitsModal);
+    byId('cancelCategoryLimitsBtn').addEventListener('click', closeCategoryLimitsModal);
+    byId('categoryLimitsForm').addEventListener('submit', saveCategoryLimits);
+    byId('categoryLimitsModal').addEventListener('click', function (e) {
+      if (e.target === this) closeCategoryLimitsModal();
+    });
+    document.addEventListener('keydown', handleCategoryLimitsModalKeydown);
     byId('importFileInput').addEventListener('change', importDataJSON);
     byId('monthlyIncomeInput').addEventListener('change', function () { appData.monthlyIncome = parseNum(this.value) || 0; processRecurring(); saveData(); });
     byId('salaryDayInput').addEventListener('change', function () { setSalaryDay(this.value); });
