@@ -1,76 +1,155 @@
-/* Desktop dashboard enhancement for MyLittleBudget.
-   Mobile remains unchanged. */
 @media (min-width: 1024px) {
-  :root { --desktop-sidebar: 14.25rem; }
+  :root {
+    --desktop-sidebar: 5rem;
+  }
 
   body {
-    padding-bottom: 0 !important;
     min-height: 100vh;
+    padding-bottom: 0 !important;
     background:
-      radial-gradient(circle at 15% 15%, rgba(16, 185, 129, .08), transparent 26rem),
-      radial-gradient(circle at 85% 85%, rgba(14, 165, 233, .06), transparent 30rem),
-      #0f172a;
+      radial-gradient(ellipse at 70% -28rem, rgba(45, 212, 191, .055), transparent 48rem),
+      var(--canvas, #0b1220);
   }
 
   header {
     position: sticky !important;
-    left: var(--desktop-sidebar);
+    z-index: 39;
+    top: 0;
     width: calc(100% - var(--desktop-sidebar));
-    padding: 1.1rem clamp(1.75rem, 3vw, 3rem) !important;
+    min-height: 4.25rem;
+    margin-left: var(--desktop-sidebar);
+    padding: .75rem clamp(1.75rem, 3vw, 3.25rem) !important;
+  }
+
+  header > div {
+    min-width: 0;
+  }
+
+  header h1 {
+    font-size: 1rem;
+  }
+
+  header > button {
+    min-height: 2.65rem;
   }
 
   main {
+    width: calc(100% - var(--desktop-sidebar));
     max-width: none !important;
-    margin-left: var(--desktop-sidebar) !important;
-    width: calc(100% - var(--desktop-sidebar)) !important;
-    padding: 2rem clamp(1.75rem, 3vw, 3rem) 3rem !important;
+    margin: 0 0 0 var(--desktop-sidebar) !important;
+    padding: 1.5rem clamp(1.75rem, 3vw, 3.25rem) 3rem !important;
   }
 
   main > * {
-    max-width: 1360px;
-    margin-left: auto;
+    width: min(100%, 1480px);
+    max-width: 1480px;
     margin-right: auto;
+    margin-left: auto;
   }
 
   nav {
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: auto;
+    position: fixed;
+    z-index: 40;
+    inset: 0 auto 0 0;
     width: var(--desktop-sidebar);
-    padding: 1.25rem .75rem !important;
-    border-top: 0 !important;
-    border-right: 1px solid rgba(51, 65, 85, .9);
-    background: rgba(15, 23, 42, .94) !important;
-    backdrop-filter: blur(20px);
+    padding: 1rem .45rem !important;
+    border: 0 !important;
+    border-right: 1px solid rgba(148, 163, 184, .13) !important;
+    border-radius: 0 !important;
+    background: #0c1524 !important;
+    box-shadow: 12px 0 32px rgba(2, 6, 23, .16);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
 
   nav > div {
-    max-width: none !important;
+    position: relative;
     display: flex !important;
+    max-width: none !important;
     flex-direction: column;
-    gap: .45rem !important;
-    padding-top: 3.85rem;
+    gap: .55rem !important;
+    padding-top: 4.25rem;
+  }
+
+  nav > div::before {
+    position: absolute;
+    top: .75rem;
+    left: 50%;
+    display: grid;
+    width: 2.55rem;
+    height: 2.55rem;
+    transform: translateX(-50%);
+    place-items: center;
+    border: 1px solid rgba(252, 211, 77, .22);
+    border-radius: .9rem;
+    background: #172235;
+    color: #fcd34d;
+    content: "M";
+    font-size: 1.15rem;
+    font-weight: 800;
+    letter-spacing: -.06em;
   }
 
   .nav-btn {
     width: 100%;
-    min-height: 3.2rem;
-    flex-direction: row !important;
-    justify-content: flex-start;
-    gap: .75rem;
-    padding: .72rem .85rem !important;
-    text-align: left;
+    min-height: 3.55rem;
+    justify-content: center;
+    gap: 0;
+    padding: .55rem .25rem !important;
+    border-radius: 1rem;
+    text-align: center;
+    transition: color .16s ease, background-color .16s ease, border-color .16s ease;
   }
 
   .nav-btn i {
+    width: auto;
     margin-bottom: 0 !important;
-    width: 1.2rem;
+    color: #94a3b8;
+    font-size: 1.2rem;
     text-align: center;
   }
 
-  .nav-btn span { font-size: .78rem !important; }
-  #backupBanner { max-width: 100%; }
+  .nav-btn span {
+    position: absolute;
+    z-index: 45;
+    top: 50%;
+    left: calc(100% + .65rem);
+    visibility: hidden;
+    transform: translate(-.25rem, -50%);
+    padding: .48rem .68rem;
+    border: 1px solid rgba(148, 163, 184, .2);
+    border-radius: .65rem;
+    background: #172235;
+    box-shadow: 0 8px 24px rgba(2, 6, 23, .35);
+    color: #e2e8f0;
+    font-size: .75rem !important;
+    font-weight: 600;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .14s ease, transform .14s ease, visibility .14s;
+  }
+
+  .nav-btn:hover span,
+  .nav-btn:focus-visible span {
+    visibility: visible;
+    transform: translate(0, -50%);
+    opacity: 1;
+  }
+
+  nav .nav-btn.active {
+    border-color: transparent;
+    background: rgba(45, 212, 191, .025);
+    color: #99f6e4;
+    box-shadow: none;
+  }
+
+  nav .nav-btn.active i {
+    color: #5eead4;
+  }
+
+  #backupBanner {
+    max-width: 100%;
+  }
 
   #tab-pocket,
   #tab-monthly,
@@ -83,114 +162,236 @@
 
   #tab-pocket {
     display: grid;
-    grid-template-columns: minmax(25rem, .9fr) minmax(29rem, 1.1fr);
-    gap: 1.35rem;
+    grid-template-columns: minmax(0, 2fr) minmax(16rem, 1.125fr);
+    grid-template-areas:
+      "budget limits"
+      "command command"
+      "movements movements";
+    grid-template-rows: minmax(18rem, auto) auto auto;
+    align-items: stretch;
+    gap: 1.15rem 1.35rem;
   }
 
-  #tab-pocket > :first-child { grid-column: 1 / -1; }
-  #tab-pocket > :nth-child(2) { grid-column: 1; }
-  #tab-pocket > :nth-child(3) { grid-column: 2; grid-row: 2; }
-  #weeklyTransactionsList { max-height: 31rem !important; overflow-y: auto; padding-right: .25rem; }
+  #tab-pocket > :first-child {
+    grid-area: budget;
+  }
+
+  #tab-pocket > :nth-child(2) {
+    grid-area: command;
+  }
+
+  #tab-pocket > :nth-child(3) {
+    grid-area: limits;
+  }
+
+  #tab-pocket > :nth-child(4) {
+    grid-area: movements;
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
+
+  #weeklyTransactionsList {
+    max-height: 34rem !important;
+    overflow-y: auto;
+    padding-right: .2rem;
+  }
 
   #tab-monthly {
     display: grid;
-    grid-template-columns: minmax(22rem, .9fr) minmax(24rem, 1.1fr);
-    gap: 1.35rem;
+    min-width: 0;
+    grid-template-columns: minmax(0, 1.3fr) minmax(19rem, .7fr);
+    grid-template-areas:
+      "hero hero"
+      "income donut"
+      "fixed extra";
+    grid-template-rows: auto auto auto;
+    gap: .95rem 1.1rem;
   }
 
-  #tab-monthly > :first-child,
-  #tab-monthly > :nth-child(2) { min-height: 100%; }
-  #tab-monthly > :last-child { grid-column: 1 / -1; }
+  #tab-monthly > * {
+    min-width: 0;
+  }
 
-  #tab-monthly > :nth-child(3),
+  #tab-monthly > :first-child {
+    grid-area: income;
+  }
+
+  #tab-monthly > :nth-child(2) {
+    grid-area: donut;
+  }
+
+  #tab-monthly > :nth-child(3) {
+    grid-area: fixed;
+  }
+
   #tab-monthly > :nth-child(4) {
-    max-height: 35rem;
-    overflow-y: auto;
-    padding-right: .25rem;
+    grid-area: extra;
+  }
+
+  #tab-monthly > :last-child {
+    grid-area: hero;
   }
 
   #tab-trends {
     display: grid;
-    grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr);
-    gap: 1.35rem;
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      "chart chart"
+      "filters summary"
+      "categories note";
+    align-items: start;
+    gap: 1.1rem;
   }
 
-  #tab-trends > :first-child,
-  #tab-trends > :nth-child(3),
-  #tab-trends > :last-child {
-    grid-column: 1 / -1;
+  #tab-trends > * {
+    min-width: 0;
   }
 
-  #tab-trends > :nth-child(2),
+  #tab-trends > :first-child {
+    grid-area: filters;
+  }
+
+  #tab-trends > :nth-child(2) {
+    grid-area: summary;
+  }
+
+  #tab-trends > :nth-child(3) {
+    grid-area: chart;
+  }
+
   #tab-trends > :nth-child(4) {
-    grid-column: span 1;
+    grid-area: categories;
+  }
+
+  #tab-trends > :last-child {
+    grid-area: note;
   }
 
   #tab-goals {
     display: grid;
-    grid-template-columns: minmax(18rem, .78fr) minmax(30rem, 1.22fr);
+    min-width: 0;
+    grid-template-columns: minmax(0, 1.2fr) minmax(19rem, .8fr);
+    grid-template-areas:
+      "summary next"
+      "goals goals"
+      "achievements achievements";
+    align-items: stretch;
     gap: 1.1rem;
   }
 
-  #tab-goals > :first-child,
-  #tab-goals > :nth-child(4),
-  #tab-goals > :last-child {
-    grid-column: 1 / -1;
+  #tab-goals > * {
+    min-width: 0;
   }
 
-  #tab-goals > :nth-child(2) { grid-column: 1; }
-  #tab-goals > :nth-child(3) { grid-column: 2; }
+  #tab-goals > :first-child {
+    grid-area: summary;
+  }
 
-  #goalsList { max-height: 47rem; overflow-y: auto; padding-right: .2rem; }
-  #achievementsList { grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); }
+  #tab-goals > :nth-child(2) {
+    grid-area: next;
+  }
+
+  #tab-goals > :nth-child(3) {
+    grid-area: goals;
+  }
+
+  #tab-goals > :nth-child(4) {
+    grid-area: achievements;
+  }
+
+  #goalsList {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
+    gap: .8rem 1rem;
+  }
+
+  #achievementsList {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+    align-items: stretch;
+  }
+
+  #achievementsList > .achievement-card + .achievement-card {
+    margin-block-start: .8rem;
+  }
 
   #tab-condo {
     display: grid;
-    grid-template-columns: minmax(23rem, .82fr) minmax(31rem, 1.18fr);
-    gap: 1.35rem;
+    min-width: 0;
+    grid-template-columns: minmax(18rem, .82fr) minmax(0, 1.18fr);
+    grid-template-areas:
+      "balance chart"
+      "upcoming ledger";
+    grid-template-rows: auto minmax(0, 1fr);
+    align-items: stretch;
+    gap: 1.1rem;
   }
 
-  #tab-condo > :first-child { grid-column: 1; }
-  #tab-condo > :nth-child(2) { grid-column: 1; }
-  #tab-condo > :nth-child(3) { grid-column: 2; grid-row: 1; }
-  #tab-condo > :nth-child(4) { grid-column: 2; grid-row: 2; }
+  #tab-condo > * {
+    min-width: 0;
+  }
+
+  #tab-condo > :first-child {
+    grid-area: balance;
+  }
+
+  #tab-condo > :nth-child(2) {
+    grid-area: upcoming;
+  }
+
+  #tab-condo > :nth-child(3) {
+    grid-area: chart;
+  }
+
+  #tab-condo > :nth-child(4) {
+    grid-area: ledger;
+  }
 
   #bankMovements {
-    max-height: 30rem;
+    max-height: 32rem;
     overflow-y: auto;
-    padding-right: .3rem;
+    padding-right: .2rem;
   }
 
-  /* Archivio: dashboard desktop più compatta e leggibile. */
   #tab-archive {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1.35rem;
-    align-items: start;
+    min-width: 0;
+    grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr);
+    grid-template-areas:
+      "savings chart"
+      "history transfer";
+    gap: 1.1rem;
+    align-items: stretch;
+  }
+
+  #tab-archive > * {
+    min-width: 0;
   }
 
   #tab-archive > :first-child {
-    grid-column: 1 / -1;
+    grid-area: savings;
   }
 
   #tab-archive > :nth-child(2) {
-    grid-column: 1 / -1;
+    grid-area: chart;
+  }
+
+  #tab-archive > :nth-child(3) {
+    grid-area: history;
+  }
+
+  #tab-archive > :nth-child(4) {
+    grid-area: transfer;
+  }
+
+  #tab-archive > :nth-child(2) {
     max-width: none;
   }
 
-  #tab-archive > :nth-child(3),
-  #tab-archive > :nth-child(4) {
-    grid-column: span 1;
-  }
-
-  #tab-archive > :nth-child(n+5) {
-    grid-column: 1 / -1;
-  }
-
   #historicalWeeksList {
-    max-height: 23rem !important;
+    max-height: 32rem !important;
     overflow-y: auto;
-    padding-right: .25rem;
+    padding-right: .2rem;
   }
 
   #tab-archive .glass {
@@ -199,43 +400,50 @@
   }
 
   #tab-archive > div:not(:first-child) {
-    border-color: rgba(71, 85, 105, .42);
-    background: rgba(30, 41, 59, .48);
+    border-color: rgba(148, 163, 184, .13);
+    background: rgba(20, 31, 48, .78);
   }
 
   #tab-archive .glass-card {
-    border-color: rgba(71, 85, 105, .35);
-    background: rgba(15, 23, 42, .42);
+    border-color: rgba(148, 163, 184, .11);
+    background: rgba(12, 22, 37, .62);
   }
 
   #tab-archive button {
-    min-height: 2.45rem;
+    min-height: 2.65rem;
   }
 
   #tab-archive .grid {
-    gap: .55rem;
+    gap: .65rem;
   }
-
-  .glass { box-shadow: 0 16px 36px rgba(2, 6, 23, .22); }
 }
 
 @media (min-width: 1280px) {
-  #tab-pocket { grid-template-columns: minmax(27rem, .88fr) minmax(36rem, 1.12fr); }
-  #tab-monthly { grid-template-columns: minmax(26rem, .92fr) minmax(30rem, 1.08fr); }
-  #tab-condo { grid-template-columns: minmax(26rem, .8fr) minmax(38rem, 1.2fr); }
-  #tab-goals { grid-template-columns: minmax(19rem, .72fr) minmax(36rem, 1.28fr); gap: 1.35rem; }
-  #achievementsList { grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); }
+  :root {
+    --desktop-sidebar: 5rem;
+  }
 
+  #tab-pocket,
+  #tab-monthly,
+  #tab-trends,
+  #tab-goals,
+  #tab-condo,
   #tab-archive {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1.5rem;
+    gap: 1.3rem;
   }
 
-  #tab-archive > :nth-child(2) {
-    min-height: 20rem;
+  #tab-pocket {
+    grid-template-columns: minmax(0, 2fr) minmax(18rem, 1.125fr);
+    gap: 1.35rem 1.6rem;
   }
 
-  #historicalWeeksList {
-    max-height: 25rem !important;
+  #tab-goals {
+    grid-template-columns: minmax(19rem, .72fr) minmax(0, 1.28fr);
   }
+
+  #tab-monthly {
+    grid-template-columns: minmax(0, 1.3fr) minmax(22rem, .7fr);
+    gap: 1.15rem 1.3rem;
+  }
+
 }
