@@ -87,6 +87,23 @@
         <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-list-ul text-emerald-400"></i> Movimenti Settimana</h3>
         <span id="expenseCount" class="text-11px text-slate-400 font-medium">0 transazioni</span>
       </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+        <div>
+          <label for="weeklyExpenseSearch" class="block text-10px font-medium text-slate-400 mb-1">Cerca descrizione</label>
+          <input type="search" id="weeklyExpenseSearch" autocomplete="off" placeholder="Cosa hai comprato?" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 placeholder-slate-500">
+        </div>
+        <div>
+          <label for="weeklyExpenseCategory" class="block text-10px font-medium text-slate-400 mb-1">Categoria</label>
+          <select id="weeklyExpenseCategory" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+            <option value="all">Tutte</option>
+            <option value="Spesa">Spesa</option>
+            <option value="Benzina">Benzina</option>
+            <option value="Caffè">Caffè</option>
+            <option value="Svago">Svago</option>
+            <option value="Altro">Altro</option>
+          </select>
+        </div>
+      </div>
       <div id="weeklyTransactionsList" class="space-y-2 max-h-64 overflow-y-auto pr-1"></div>
     </div>
   </div>

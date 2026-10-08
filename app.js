@@ -26,6 +26,8 @@
   var bannerDismissed = false;
   var showAllLedger = false;
   var categoryLimitsReturnFocus = null;
+  var weeklyExpenseSearch = '';
+  var weeklyExpenseCategory = 'all';
 
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
   function round2(n) { return Math.round(n * 100) / 100; }
@@ -684,15 +686,37 @@
 
     byId('pocketSpent').textContent = eur(spent);
     byId('pocketInitial').textContent = eur(w.initialBudget);
-    byId('expenseCount').textContent = w.expenses.length + (w.expenses.length === 1 ? ' transazione' : ' transazioni');
     renderCategoryLimits();
 
+    renderWeeklyTransactions();
+  }
+
+  function renderWeeklyTransactions() {
+    var expenses = appData.currentWeek.expenses;
     var list = byId('weeklyTransactionsList');
-    if (!w.expenses.length) {
+    var search = weeklyExpenseSearch.trim().toLocaleLowerCase('it');
+    var hasFilters = !!search || weeklyExpenseCategory !== 'all';
+    if (!expenses.length) {
+      byId('expenseCount').textContent = '0 transazioni';
       list.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">Nessuna spesa registrata in questa settimana.</p>';
       return;
     }
-    list.innerHTML = w.expenses.map(function (x) {
+    var visibleExpenses = expenses.filter(function (expense) {
+      var matchesSearch = !search || String(expense.title || '').toLocaleLowerCase('it').indexOf(search) >= 0;
+      var matchesCategory = weeklyExpenseCategory === 'all' || expense.category === weeklyExpenseCategory;
+      return matchesSearch && matchesCategory;
+    });
+    byId('expenseCount').textContent = hasFilters
+      ? visibleExpenses.length + ' di ' + expenses.length + ' movimenti'
+      : expenses.length + (expenses.length === 1 ? ' transazione' : ' transazioni');
+    if (!visibleExpenses.length) {
+      list.innerHTML = '<div class="text-center py-4">' +
+        '<p class="text-xs text-slate-500 mb-2">Nessun movimento trovato</p>' +
+        '<button type="button" data-reset-week-filters class="text-11px bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-1.5 rounded-lg transition">Azzera filtri</button>' +
+        '</div>';
+      return;
+    }
+    list.innerHTML = visibleExpenses.map(function (x) {
       var icon = CAT_ICONS[x.category] || 'fa-cart-shopping';
       return '<div class="glass-card rounded-xl p-3 flex items-center justify-between border border-slate-800">' +
         '<div class="flex items-center gap-3">' +
@@ -705,6 +729,14 @@
           '<button type="button" data-del-week="' + x.id + '" class="text-slate-500 hover:text-rose-400 text-xs p-1"><i class="fa-solid fa-xmark"></i></button>' +
         '</div></div>';
     }).join('');
+  }
+
+  function resetWeeklyExpenseFilters() {
+    weeklyExpenseSearch = '';
+    weeklyExpenseCategory = 'all';
+    byId('weeklyExpenseSearch').value = '';
+    byId('weeklyExpenseCategory').value = 'all';
+    renderWeeklyTransactions();
   }
 
   function renderCategoryLimits() {
@@ -1226,6 +1258,14 @@
       b.addEventListener('click', function () { selectCategory(b.getAttribute('data-cat')); });
     });
     byId('addExpenseForm').addEventListener('submit', handleAddExpense);
+    byId('weeklyExpenseSearch').addEventListener('input', function () {
+      weeklyExpenseSearch = this.value;
+      renderWeeklyTransactions();
+    });
+    byId('weeklyExpenseCategory').addEventListener('change', function () {
+      weeklyExpenseCategory = this.value;
+      renderWeeklyTransactions();
+    });
     byId('manageCategoryLimitsBtn').addEventListener('click', openCategoryLimitsModal);
     byId('cancelCategoryLimitsBtn').addEventListener('click', closeCategoryLimitsModal);
     byId('categoryLimitsForm').addEventListener('submit', saveCategoryLimits);
@@ -1246,7 +1286,9 @@
       var btn = e.target.closest('button');
       if (!btn) return;
       var id;
-      if (btn.hasAttribute('data-del-week')) {
+      if (btn.hasAttribute('data-reset-week-filters')) {
+        resetWeeklyExpenseFilters();
+      } else if (btn.hasAttribute('data-del-week')) {
         deleteWeeklyExpense(Number(btn.getAttribute('data-del-week')));
       } else if (btn.hasAttribute('data-edit-week')) {
         editClosedWeek(Number(btn.getAttribute('data-edit-week')));
