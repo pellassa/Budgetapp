@@ -1,6 +1,6 @@
 'use strict';
 
-var CACHE_VERSION = 'mylittlebudget-shell-v1';
+var CACHE_VERSION = 'mylittlebudget-shell-v2';
 var CACHE_PREFIX = 'mylittlebudget-shell-';
 var SHELL_ASSETS = [
   './',
@@ -17,7 +17,7 @@ var SHELL_URLS = SHELL_ASSETS.map(function (path) {
   return new URL(path, self.registration.scope).href;
 });
 var INDEX_URL = new URL('./index.html', self.registration.scope).href;
-var APP_VERSION_MARKER = '<meta name="app-shell-version" content="1">';
+var APP_VERSION_MARKER = '<meta name="app-shell-version" content="2">';
 
 self.addEventListener('install', function (event) {
   event.waitUntil(caches.open(CACHE_VERSION).then(function (cache) {
