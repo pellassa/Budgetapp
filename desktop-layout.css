@@ -74,6 +74,7 @@
 
   #tab-pocket,
   #tab-monthly,
+  #tab-trends,
   #tab-condo,
   #tab-archive {
     align-items: start;
@@ -105,6 +106,23 @@
     max-height: 35rem;
     overflow-y: auto;
     padding-right: .25rem;
+  }
+
+  #tab-trends {
+    display: grid;
+    grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr);
+    gap: 1.35rem;
+  }
+
+  #tab-trends > :first-child,
+  #tab-trends > :nth-child(3),
+  #tab-trends > :last-child {
+    grid-column: 1 / -1;
+  }
+
+  #tab-trends > :nth-child(2),
+  #tab-trends > :nth-child(4) {
+    grid-column: span 1;
   }
 
   #tab-condo {
