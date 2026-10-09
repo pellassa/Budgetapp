@@ -101,6 +101,7 @@ function createHarness(activeTab, width) {
     }
   };
   var switchedTabs = [];
+  var switchedDirections = [];
   var navigation = SwipeNavigation.create({
     document: doc,
     window: win,
@@ -108,8 +109,9 @@ function createHarness(activeTab, width) {
     maxWidth: 639,
     tabs: ['pocket', 'monthly', 'trends', 'goals', 'condo', 'archive'],
     getActiveTabId: function () { return currentTab; },
-    switchTab: function (tab) {
+    switchTab: function (tab, direction) {
       switchedTabs.push(tab);
+      switchedDirections.push(direction);
       currentTab = tab;
     }
   });
@@ -118,6 +120,7 @@ function createHarness(activeTab, width) {
     doc: doc,
     main: main,
     switchedTabs: switchedTabs,
+    switchedDirections: switchedDirections,
     currentTab: function () { return currentTab; },
     navigation: navigation
   };
@@ -155,11 +158,19 @@ test('swipes from empty content and static cards including decorative SVG', func
   var harness = createHarness();
   performGesture(harness, elementInMain(harness, 'div'), -60, 0, 300);
   assert.deepEqual(harness.switchedTabs, ['monthly']);
+  assert.deepEqual(harness.switchedDirections, ['next']);
 
   harness = createHarness();
   var card = elementInMain(harness, 'article', { className: 'glass-card' });
   performGesture(harness, elementInMain(harness, 'svg', { parentElement: card }), -60, 0, 300);
   assert.deepEqual(harness.switchedTabs, ['monthly']);
+});
+
+test('passes previous direction for a rightward swipe', function () {
+  var harness = createHarness('monthly');
+  performGesture(harness, elementInMain(harness, 'div'), 60, 0, 300);
+  assert.deepEqual(harness.switchedTabs, ['pocket']);
+  assert.deepEqual(harness.switchedDirections, ['previous']);
 });
 
 test('touchend on document completes a start received inside main', function () {
@@ -275,6 +286,7 @@ test('one completed gesture calls switchTab at most once', function () {
   harness.doc.dispatch('touchend', makeEvent(harness.doc, [], [touch(1, 40, 180)], 300));
   harness.doc.dispatch('touchend', makeEvent(harness.doc, [], [touch(1, 40, 180)], 320));
   assert.deepEqual(harness.switchedTabs, ['monthly']);
+  assert.deepEqual(harness.switchedDirections, ['next']);
 });
 
 test('runtime achievement cards are direct children of the scroll-region selector', function () {

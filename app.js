@@ -4,6 +4,8 @@
   var STORAGE_KEY = 'userbudgetpwadata';
   var TABS = ['pocket', 'monthly', 'trends', 'goals', 'condo', 'archive'];
   var MOBILE_SWIPE_MAX = 639;
+  var hasInitializedTab = false;
+  var activeTabTransitionCleanup = null;
   var CAT_ICONS = { 'Spesa': 'fa-cart-shopping', 'Benzina': 'fa-gas-pump', 'Caffè': 'fa-mug-hot', 'Svago': 'fa-utensils', 'Altro': 'fa-ellipsis' };
   var CATEGORIES = ['Spesa', 'Benzina', 'Caffè', 'Svago', 'Altro'];
   var CAT_ON  = 'cat-btn active bg-emerald-500/20 border border-emerald-500/50 text-emerald-300 p-2 rounded-xl text-center flex flex-col items-center gap-1 transition';
@@ -934,10 +936,27 @@
     renderBankMovements();
   }
 
-  function switchTab(tabId) {
+  function switchTab(tabId, swipeDirection) {
+    var previousTabId = getActiveTabId();
     if (tabId === 'account') tabId = 'condo';
     var navButtons = document.querySelectorAll('[data-tab]');
     if (TABS.indexOf(tabId) < 0 || !byId('tab-' + tabId)) tabId = 'pocket';
+    var shouldAnimate = hasInitializedTab && previousTabId !== tabId &&
+      window.matchMedia &&
+      window.matchMedia('(max-width: ' + MOBILE_SWIPE_MAX + 'px)').matches &&
+      !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (previousTabId !== tabId) {
+      if (activeTabTransitionCleanup) {
+        activeTabTransitionCleanup();
+        activeTabTransitionCleanup = null;
+      }
+      TABS.forEach(function (id) {
+        var tab = byId('tab-' + id);
+        if (tab) {
+          tab.classList.remove('tab-enter', 'tab-enter--from-right', 'tab-enter--from-left', 'tab-enter--neutral');
+        }
+      });
+    }
     TABS.forEach(function (id) {
       var t = byId('tab-' + id);
       if (t) t.classList.add('hidden');
@@ -948,7 +967,35 @@
       if (active) btn.setAttribute('aria-current', 'page');
       else btn.removeAttribute('aria-current');
     });
-    byId('tab-' + tabId).classList.remove('hidden');
+    var activeTab = byId('tab-' + tabId);
+    activeTab.classList.remove('hidden');
+    if (shouldAnimate) {
+      var directionClass = swipeDirection === 'next'
+        ? 'tab-enter--from-right'
+        : swipeDirection === 'previous'
+          ? 'tab-enter--from-left'
+          : 'tab-enter--neutral';
+      var transitionClasses = ['tab-enter', 'tab-enter--from-right', 'tab-enter--from-left', 'tab-enter--neutral'];
+      var onAnimationFinished = function (event) {
+        if (event.target !== activeTab || event.animationName !== 'mobile-tab-enter') return;
+        activeTab.removeEventListener('animationend', onAnimationFinished);
+        activeTab.removeEventListener('animationcancel', onAnimationFinished);
+        transitionClasses.forEach(function (className) { activeTab.classList.remove(className); });
+        if (activeTabTransitionCleanup === clearTransition) activeTabTransitionCleanup = null;
+      };
+      var clearTransition = function () {
+        activeTab.removeEventListener('animationend', onAnimationFinished);
+        activeTab.removeEventListener('animationcancel', onAnimationFinished);
+        transitionClasses.forEach(function (className) { activeTab.classList.remove(className); });
+      };
+      activeTab.addEventListener('animationend', onAnimationFinished);
+      activeTab.addEventListener('animationcancel', onAnimationFinished);
+      activeTab.classList.add(directionClass);
+      void activeTab.offsetWidth;
+      activeTab.classList.add('tab-enter');
+      activeTabTransitionCleanup = clearTransition;
+    }
+    hasInitializedTab = true;
     try { sessionStorage.setItem('activeTab', tabId); } catch (e) {}
     if (tabId === 'trends') {
       var newTrendVisit = !appData.achievementState.trendVisitedAt;
