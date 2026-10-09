@@ -8,6 +8,8 @@ I dati finanziari vengono salvati nel browser sul dispositivo, tramite l’archi
 
 Il backup JSON resta compatibile con il formato esistente ed è **leggibile e non cifrato**. Proteggilo come qualsiasi documento che contiene dati finanziari. La cifratura con password potrebbe essere valutata in futuro, ma non è attualmente disponibile. Non vengono inclusi dati demo o personali nel repository.
 
+Dopo un reset del solo grafico del conto, i backup includono il campo facoltativo `bankChartReset` (saldo di partenza e movimenti successivi al reset). I backup precedenti che non contengono il campo continuano a ricostruire il grafico da `bankHistory`; il contenitore e il protocollo del backup Google Drive restano invariati.
+
 ## Installazione come PWA
 
 Apri MyLittleBudget in un browser compatibile tramite HTTPS (o localhost), poi scegli “Installa app” / “Aggiungi alla schermata Home” dal menu del browser. Una copia dell’interfaccia e dei file locali può essere disponibile offline dopo il primo caricamento; funzioni che dipendono da servizi online, come Google Drive e le librerie caricate da CDN, richiedono una connessione.

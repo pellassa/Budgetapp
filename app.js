@@ -3,6 +3,7 @@
 
   var STORAGE_KEY = 'userbudgetpwadata';
   var TABS = ['pocket', 'monthly', 'trends', 'goals', 'condo', 'archive'];
+  var MOBILE_SWIPE_MAX = 639;
   var CAT_ICONS = { 'Spesa': 'fa-cart-shopping', 'Benzina': 'fa-gas-pump', 'Caffè': 'fa-mug-hot', 'Svago': 'fa-utensils', 'Altro': 'fa-ellipsis' };
   var CATEGORIES = ['Spesa', 'Benzina', 'Caffè', 'Svago', 'Altro'];
   var CAT_ON  = 'cat-btn active bg-emerald-500/20 border border-emerald-500/50 text-emerald-300 p-2 rounded-xl text-center flex flex-col items-center gap-1 transition';
@@ -370,6 +371,21 @@
     });
     d.bankBalance = run;
   }
+  function recomputeBankChartReset(reset) {
+    var run = reset.balance;
+    reset.movements.forEach(function (movement) {
+      run = round2(run + movement.delta);
+      movement.balance = run;
+    });
+  }
+  function syncBankChartAfterDelete(id, previousBalance) {
+    var reset = appData.bankChartReset;
+    if (!reset) return;
+    var index = reset.movements.map(function (movement) { return movement.id; }).indexOf(id);
+    if (index >= 0) reset.movements.splice(index, 1);
+    else reset.balance = round2(reset.balance + appData.bankBalance - previousBalance);
+    recomputeBankChartReset(reset);
+  }
   function inferSrc(e) {
     var n = String(e.note || '');
     if (e.opening || /^Saldo iniziale/.test(n)) return 'opening';
@@ -394,6 +410,23 @@
       }
     }
     recomputeBankOn(d);
+    if (d.bankChartReset !== undefined && d.bankChartReset !== null) {
+      var reset = d.bankChartReset;
+      if (!reset || typeof reset !== 'object' || Array.isArray(reset) ||
+          typeof reset.at !== 'number' || !isFinite(reset.at) ||
+          typeof reset.balance !== 'number' || !isFinite(reset.balance) ||
+          !Array.isArray(reset.movements) || reset.movements.length > MAX_BANK_POINTS ||
+          !reset.movements.every(function (movement) {
+            return movement && typeof movement === 'object' && !Array.isArray(movement) &&
+              (typeof movement.id === 'string' || typeof movement.id === 'number') &&
+              typeof movement.t === 'number' && isFinite(movement.t) &&
+              typeof movement.delta === 'number' && isFinite(movement.delta) &&
+              typeof movement.balance === 'number' && isFinite(movement.balance);
+          })) {
+        throw new Error('Lo storico grafico del conto non è valido.');
+      }
+      recomputeBankChartReset(reset);
+    }
   }
 
   function normalize(d) {
@@ -477,11 +510,12 @@
 
   function pushBank(delta, note, opts) {
     opts = opts || {};
-    appData.bankHistory.push({
+    var movement = {
       id: uid(), t: typeof opts.t === 'number' ? opts.t : Date.now(),
       delta: round2(delta), balance: 0, note: note, src: opts.src || 'manual',
       refId: opts.refId === undefined ? null : opts.refId
-    });
+    };
+    appData.bankHistory.push(movement);
     if (appData.bankHistory.length > MAX_BANK_POINTS) {
       var n = appData.bankHistory.length - MAX_BANK_POINTS + 1;
       recomputeBankOn(appData);
@@ -492,6 +526,23 @@
         .concat(appData.bankHistory.slice(n));
     }
     recomputeBankOn(appData);
+    if (appData.bankChartReset) {
+      var previousChartPoint = appData.bankChartReset.movements[appData.bankChartReset.movements.length - 1];
+      appData.bankChartReset.movements.push({
+        id: movement.id,
+        t: Math.max(Date.now(), movement.t, previousChartPoint ? previousChartPoint.t : appData.bankChartReset.at),
+        delta: movement.delta,
+        balance: 0
+      });
+      if (appData.bankChartReset.movements.length > MAX_BANK_POINTS) {
+        var excess = appData.bankChartReset.movements.length - MAX_BANK_POINTS;
+        var foldedChartPoints = appData.bankChartReset.movements.splice(0, excess);
+        var lastFoldedPoint = foldedChartPoints[foldedChartPoints.length - 1];
+        appData.bankChartReset.balance = lastFoldedPoint.balance;
+        appData.bankChartReset.at = lastFoldedPoint.t;
+      }
+      recomputeBankChartReset(appData.bankChartReset);
+    }
   }
   function adjustBank(delta, note, opts) { pushBank(delta, note, opts); }
 
@@ -502,6 +553,12 @@
     if (delta === 0) return;
     pushBank(delta, 'Correzione saldo (allineamento con la banca)', { src: 'adjust' });
     saveData();
+  }
+
+  function resetBankHistory() {
+    appData.bankChartReset = { at: Date.now(), balance: appData.bankBalance, movements: [] };
+    saveData();
+    return true;
   }
 
   function addBankMovement(sign) {
@@ -528,8 +585,10 @@
     var meta = SRC[e.src] || SRC.manual;
     if (!meta.del) { alert('Questo movimento non si elimina da qui. Per le spese pocket usa la scheda Pocket; per sistemare il saldo usa la correzione.'); return; }
     if (!confirm('Eliminare il movimento "' + e.note + '" (' + eurSigned(e.delta) + ')?')) return;
+    var previousBalance = appData.bankBalance;
     appData.bankHistory = appData.bankHistory.filter(function (x) { return x.id !== id; });
     recomputeBankOn(appData);
+    syncBankChartAfterDelete(e.id, previousBalance);
     saveData();
   }
 
@@ -764,9 +823,13 @@
   /* ---------- rendering conto ---------- */
   function renderBankChart() {
     var el = byId('bankChart');
-    var pts = appData.bankHistory.slice(-40);
+    var pts = appData.bankChartReset
+      ? [{ t: appData.bankChartReset.at, balance: appData.bankChartReset.balance }].concat(appData.bankChartReset.movements.slice(-39))
+      : appData.bankHistory.slice(-40);
     if (pts.length < 2) {
-      el.innerHTML = '<p class="text-xs text-slate-500 text-center py-6">Il grafico apparirà dopo il primo movimento sul conto.</p>';
+      el.innerHTML = '<p class="text-xs text-slate-500 text-center py-6">' +
+        (appData.bankChartReset ? 'Storico azzerato. Il grafico ripartirà dal saldo attuale al prossimo movimento.' : 'Il grafico apparirà dopo il primo movimento sul conto.') +
+        '</p>';
       byId('bankTrend').textContent = '';
       return;
     }
@@ -897,6 +960,73 @@
     window.scrollTo(0, 0);
   }
 
+  var swipeState = null;
+
+  function isMobileSwipeViewport() {
+    if (!window.matchMedia) return false;
+    return window.matchMedia('(max-width: ' + MOBILE_SWIPE_MAX + 'px)').matches;
+  }
+
+  function ignoreSwipeTarget(target) {
+    if (!target || !(target instanceof Element)) return false;
+    if (target.closest('input, textarea, select, button, a, label, [contenteditable], [role="dialog"], [aria-modal="true"], [data-tab], nav, [role="menu"], [data-menu-open="true"], [data-overlay-open="true"]')) return true;
+    if (target.closest('svg, canvas, [data-chart], .chart, .goal-dialog, .overflow-x-auto, [class*="overflow-x"], [style*="overflow-x"], [role="progressbar"], [draggable], [aria-grabbed="true"], [data-drag], [data-gesture], .goal-card, .goal-next-card, .goal-progress-track, #goalsList, #nextGoalContent')) return true;
+    if (target.closest('#resetModal, #bankChartResetModal, #categoryLimitsModal, #goalModal, #goalOperationModal')) return true;
+    return false;
+  }
+
+  function getActiveTabId() {
+    var active = document.querySelector('main > [id^="tab-"]:not(.hidden)');
+    return active ? active.id.replace(/^tab-/, '') : TABS[0];
+  }
+
+  var swipeTouchPointers = {};
+
+  function handleSwipeStart(event) {
+    if (event.pointerType !== 'touch') return;
+    var pointerId = String(event.pointerId);
+    swipeTouchPointers[pointerId] = true;
+    if (!isMobileSwipeViewport() || event.isPrimary === false ||
+        Object.keys(swipeTouchPointers).length !== 1 || ignoreSwipeTarget(event.target)) {
+      swipeState = null;
+      return;
+    }
+    swipeState = { pointerId: pointerId, x: event.clientX, y: event.clientY, tab: getActiveTabId() };
+  }
+
+  function handleSwipeEnd(event) {
+    if (event.pointerType !== 'touch') return;
+    var pointerId = String(event.pointerId);
+    var isSinglePointer = swipeState && swipeState.pointerId === pointerId &&
+      event.isPrimary !== false && Object.keys(swipeTouchPointers).length === 1;
+    delete swipeTouchPointers[pointerId];
+    if (!isSinglePointer) {
+      swipeState = null;
+      return;
+    }
+    var dx = event.clientX - swipeState.x;
+    var dy = event.clientY - swipeState.y;
+    var currentIndex = TABS.indexOf(swipeState.tab);
+    if (Math.abs(dx) < 72 || Math.abs(dx) < Math.abs(dy) * 1.5 || currentIndex < 0) {
+      swipeState = null;
+      return;
+    }
+    if (dx < 0 && currentIndex < TABS.length - 1) switchTab(TABS[currentIndex + 1]);
+    else if (dx > 0 && currentIndex > 0) switchTab(TABS[currentIndex - 1]);
+    swipeState = null;
+  }
+
+  function handleSwipeCancel(event) {
+    if (event.pointerType === 'touch') delete swipeTouchPointers[String(event.pointerId)];
+    swipeState = null;
+  }
+
+  function attachSwipeNavigation() {
+    document.addEventListener('pointerdown', handleSwipeStart, { passive: true });
+    document.addEventListener('pointerup', handleSwipeEnd, { passive: true });
+    document.addEventListener('pointercancel', handleSwipeCancel, { passive: true });
+  }
+
   function selectCategory(cat) {
     appData.currentCategory = cat;
     document.querySelectorAll('.cat-btn').forEach(function (b) {
@@ -924,11 +1054,13 @@
   function deleteWeeklyExpense(id) {
     var exp = appData.currentWeek.expenses.filter(function (x) { return x.id === id; })[0];
     if (!exp) return;
+    var previousBalance = appData.bankBalance;
     appData.currentWeek.expenses = appData.currentWeek.expenses.filter(function (x) { return x.id !== id; });
     var linked = appData.bankHistory.filter(function (e) { return e.src === 'pocket' && e.refId === id; })[0];
     if (linked) {
       appData.bankHistory = appData.bankHistory.filter(function (e) { return e !== linked; });
       recomputeBankOn(appData);
+      syncBankChartAfterDelete(linked.id, previousBalance);
     } else {
       adjustBank(exp.amount, 'Annullata: ' + exp.title, { src: 'adjust' });
     }
@@ -1746,6 +1878,7 @@
     var statusLabels = { active: 'Attivo', completed: 'Completato', archived: 'Archiviato' };
     var deadlineText = !goal.deadline ? 'Nessuna scadenza' :
       (deadlineState === 'past' ? 'Scadenza superata · ' : 'Scadenza ') + new Date(goal.deadline + 'T00:00:00').toLocaleDateString('it-IT');
+    var goalPercent = goalProgress(goal);
     var actionButtons = goal.status === 'active'
       ? '<button type="button" data-goal-action="deposit" data-goal-id="' + esc(String(goal.id)) + '" class="goal-action-primary">Versa</button>' +
         '<button type="button" data-goal-action="withdrawal" data-goal-id="' + esc(String(goal.id)) + '" class="goal-action">Preleva</button>' +
@@ -1765,14 +1898,14 @@
             (operation.type === 'deposit' ? '+' : '−') + esc(eur(operation.amount)) + '</strong></li>';
         }).join('') + '</ul></details>'
       : '<p class="text-10px text-slate-500 mt-3">Nessuna operazione registrata.</p>';
-    return '<article class="goal-card ' + theme.classes + '" data-goal-card="' + esc(String(goal.id)) + '" tabindex="-1">' +
-      '<div class="flex items-start gap-3"><span class="goal-icon"><i class="fa-solid ' + theme.icon + '" aria-hidden="true"></i></span>' +
-      '<div class="min-w-0 flex-1"><div class="flex items-start justify-between gap-2"><h4 class="font-semibold text-white break-words">' + esc(goal.name) + '</h4>' +
+    return '<article class="goal-card goal-card--compact ' + theme.classes + '" data-goal-card="' + esc(String(goal.id)) + '" tabindex="-1">' +
+      '<div class="goal-head"><span class="goal-icon"><i class="fa-solid ' + theme.icon + '" aria-hidden="true"></i></span>' +
+      '<div class="min-w-0 flex-1"><div class="goal-title-row"><h4 class="font-semibold text-white break-words">' + esc(goal.name) + '</h4>' +
       '<span class="goal-status">' + statusLabels[goal.status] + '</span></div>' +
-      '<p class="text-11px text-slate-400 mt-1">' + esc(eur(goal.saved)) + ' accantonati · target ' + esc(eur(goal.target)) + '</p></div></div>' +
-      '<div class="mt-4">' + accessibleProgress(goal, 'Avanzamento obiettivo') + '</div>' +
+      '<div class="goal-summary-row"><span>' + esc(eur(goal.saved)) + ' · target ' + esc(eur(goal.target)) + '</span><span>' + goalPercent.toFixed(0) + '%</span></div></div></div>' +
+      '<div class="goal-progress-wrap">' + accessibleProgress(goal, 'Avanzamento obiettivo') + '</div>' +
       '<div class="goal-meta"><span>' + esc(deadlineText) + '</span>' +
-      (monthly !== null ? '<span>Quota mensile suggerita ' + esc(eur(monthly)) + '</span>' : '') + '</div>' +
+      (monthly !== null ? '<span>Quota mensile ' + esc(eur(monthly)) + '</span>' : '') + '</div>' +
       '<div class="goal-actions">' + actionButtons + '</div>' + history + '</article>';
   }
 
@@ -2278,6 +2411,21 @@
         }
       });
     });
+    if (data.bankChartReset !== undefined && data.bankChartReset !== null) {
+      var chartReset = data.bankChartReset;
+      if (!isRecord(chartReset) || typeof chartReset.at !== 'number' || !isFinite(chartReset.at) ||
+          typeof chartReset.balance !== 'number' || !isFinite(chartReset.balance) ||
+          !Array.isArray(chartReset.movements) || chartReset.movements.length > MAX_BANK_POINTS ||
+          !chartReset.movements.every(function (movement) {
+            return isRecord(movement) &&
+              (typeof movement.id === 'string' || typeof movement.id === 'number') &&
+              typeof movement.t === 'number' && isFinite(movement.t) &&
+              typeof movement.delta === 'number' && isFinite(movement.delta) &&
+              typeof movement.balance === 'number' && isFinite(movement.balance);
+          })) {
+        throw new Error('Lo storico grafico del conto non è valido.');
+      }
+    }
 
     if (data.categoryLimits !== undefined && data.categoryLimits !== null &&
         (!isRecord(data.categoryLimits) || Object.keys(data.categoryLimits).some(function (category) {
@@ -2555,6 +2703,56 @@
     }
   }
 
+  var bankChartResetReturnFocus = null;
+
+  function openBankChartResetModal() {
+    bankChartResetReturnFocus = document.activeElement;
+    var modal = byId('bankChartResetModal');
+    modal.classList.remove('hidden');
+    modal.setAttribute('aria-hidden', 'false');
+    byId('cancelBankChartResetBtn').focus();
+  }
+
+  function closeBankChartResetModal() {
+    var modal = byId('bankChartResetModal');
+    if (modal.classList.contains('hidden')) return;
+    modal.classList.add('hidden');
+    modal.setAttribute('aria-hidden', 'true');
+    if (bankChartResetReturnFocus && document.contains(bankChartResetReturnFocus)) {
+      bankChartResetReturnFocus.focus();
+    }
+    bankChartResetReturnFocus = null;
+  }
+
+  function confirmBankChartReset() {
+    if (byId('bankChartResetModal').classList.contains('hidden')) return;
+    resetBankHistory();
+    closeBankChartResetModal();
+  }
+
+  function handleBankChartResetModalKeydown(event) {
+    var modal = byId('bankChartResetModal');
+    if (modal.classList.contains('hidden')) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeBankChartResetModal();
+      return;
+    }
+    if (event.key !== 'Tab') return;
+    var focusable = modal.querySelectorAll('button:not([disabled])');
+    var first = focusable[0], last = focusable[focusable.length - 1];
+    if (!modal.contains(document.activeElement)) {
+      event.preventDefault();
+      first.focus();
+    } else if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
+
   function openResetModal() {
     var spent = sum(appData.currentWeek.expenses);
     var left = appData.currentWeek.initialBudget - spent;
@@ -2633,6 +2831,7 @@
   window.openResetModal = openResetModal;
   window.closeResetModal = closeResetModal;
   window.executeSundayReset = executeSundayReset;
+  window.resetBankHistory = resetBankHistory;
   window.exportDataJSON = exportDataJSON;
   window.exportCSV = exportCSV;
   window.shareBackup = shareBackup;
@@ -2649,6 +2848,7 @@
     document.querySelectorAll('.nav-btn').forEach(function (b) {
       b.addEventListener('click', function () { switchTab(b.getAttribute('data-tab')); });
     });
+    attachSwipeNavigation();
     document.querySelectorAll('.cat-btn').forEach(function (b) {
       b.addEventListener('click', function () { selectCategory(b.getAttribute('data-cat')); });
     });
@@ -2670,6 +2870,13 @@
       renderWeeklyTransactions();
     });
     byId('resetWeeklyExpenseFiltersBtn').addEventListener('click', resetWeeklyExpenseFilters);
+    byId('resetBankHistoryBtn').addEventListener('click', openBankChartResetModal);
+    byId('cancelBankChartResetBtn').addEventListener('click', closeBankChartResetModal);
+    byId('confirmBankChartResetBtn').addEventListener('click', confirmBankChartReset);
+    byId('bankChartResetModal').addEventListener('click', function (event) {
+      if (event.target === this) closeBankChartResetModal();
+    });
+    document.addEventListener('keydown', handleBankChartResetModalKeydown);
     byId('manageCategoryLimitsBtn').addEventListener('click', openCategoryLimitsModal);
     byId('cancelCategoryLimitsBtn').addEventListener('click', closeCategoryLimitsModal);
     byId('categoryLimitsForm').addEventListener('submit', saveCategoryLimits);
