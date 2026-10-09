@@ -132,9 +132,9 @@
 
       var currentIndex = tabs.indexOf(state.tab);
       if (deltaX < 0 && currentIndex < tabs.length - 1) {
-        config.switchTab(tabs[currentIndex + 1]);
+        config.switchTab(tabs[currentIndex + 1], 'next');
       } else if (deltaX > 0 && currentIndex > 0) {
-        config.switchTab(tabs[currentIndex - 1]);
+        config.switchTab(tabs[currentIndex - 1], 'previous');
       }
     }
 
