@@ -545,12 +545,10 @@ label:has(input[type="file"]):focus-within {
 }
 
 .achievement-grid {
+  display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 10.5rem), 1fr));
   align-items: stretch;
-}
-
-.achievement-grid > .achievement-card + .achievement-card {
-  margin-block-start: .7rem;
+  gap: .7rem;
 }
 
 .achievement-card {
@@ -717,6 +715,11 @@ label:has(input[type="file"]):focus-within {
   color: var(--text-primary);
 }
 
+.bank-chart-reset-btn:disabled {
+  cursor: not-allowed;
+  opacity: .56;
+}
+
 .bank-chart-reset-dialog {
   max-height: min(90vh, 48rem);
   max-height: min(90dvh, 48rem);
@@ -879,6 +882,20 @@ nav .nav-btn span {
     padding: 1.1rem;
   }
 
+  #tab-goals {
+    min-height: 0;
+  }
+
+  #goalsList {
+    max-height: min(52vh, 30rem);
+    max-height: min(52svh, 30rem);
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+    padding: 0 .25rem 4.5rem 0;
+    scrollbar-width: thin;
+  }
+
   #goalsList > .goal-card--compact {
     padding: .8rem;
   }
@@ -887,6 +904,22 @@ nav .nav-btn span {
   #goalsList .goal-card--compact .goal-summary-row {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  #tab-goals > :nth-child(4) {
+    min-height: 0;
+  }
+
+  #achievementsList {
+    min-height: 0;
+    max-height: min(45vh, 26rem);
+    max-height: min(45svh, 26rem);
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+    padding: .2rem .45rem 1.25rem .25rem;
+    scroll-padding-block: .5rem 1rem;
+    scrollbar-width: thin;
   }
 
   .achievement-card {
@@ -943,11 +976,54 @@ nav .nav-btn span {
 
   .goal-dialog,
   #resetModal > .glass,
+  #bankChartResetModal > .glass,
   #categoryLimitsModal > .glass,
   #goalModal > .glass,
   #goalOperationModal > .glass {
     width: min(100%, 34rem);
     padding: 1.1rem !important;
+  }
+
+  .bank-chart-reset-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .bank-chart-reset-btn {
+    display: block;
+    width: 100%;
+    min-height: 2.75rem;
+    appearance: none;
+    -webkit-appearance: none;
+    border: 1px solid rgba(148, 163, 184, .32);
+    background: rgba(51, 65, 85, .55);
+    color: #e2e8f0;
+    font-size: .8rem;
+    pointer-events: auto;
+    position: relative;
+    z-index: 1;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 1023px) {
+  #tab-goals {
+    min-height: 0;
+  }
+
+  #tab-goals > :nth-child(4) {
+    min-height: 0;
+  }
+
+  #achievementsList {
+    min-height: 0;
+    max-height: min(58vh, 36rem);
+    max-height: min(58svh, 36rem);
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+    padding: .25rem .5rem 1.25rem .25rem;
+    scroll-padding-block: .5rem 1rem;
+    scrollbar-width: thin;
   }
 }
 
