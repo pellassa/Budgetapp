@@ -398,6 +398,59 @@ label:has(input[type="file"]):focus-within {
   line-height: 1.45;
 }
 
+.goal-card--compact {
+  display: grid;
+  gap: .7rem;
+}
+
+.goal-card--compact .goal-head {
+  display: flex;
+  align-items: flex-start;
+  gap: .65rem;
+  min-width: 0;
+}
+
+.goal-card--compact .goal-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: .55rem;
+}
+
+.goal-card--compact .goal-summary-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: .25rem .75rem;
+  margin-top: .35rem;
+  color: var(--text-secondary);
+  font-size: .72rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.goal-card--compact .goal-progress-wrap {
+  display: grid;
+  gap: .25rem;
+}
+
+.goal-card--compact .goal-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem .75rem;
+  margin-top: 0;
+  font-size: .68rem;
+}
+
+.goal-card--compact .goal-actions {
+  margin-top: 0;
+  padding-top: .55rem;
+}
+
+.goal-card--compact .goal-history {
+  margin-top: 0;
+}
+
 .goal-status,
 .achievement-family {
   border-radius: 999px;
@@ -603,6 +656,7 @@ label:has(input[type="file"]):focus-within {
 }
 
 #resetModal,
+#bankChartResetModal,
 #categoryLimitsModal,
 #goalModal,
 #goalOperationModal {
@@ -612,6 +666,7 @@ label:has(input[type="file"]):focus-within {
 }
 
 #resetModal > .glass,
+#bankChartResetModal > .glass,
 #categoryLimitsModal > .glass,
 #goalModal > .glass,
 #goalOperationModal > .glass {
@@ -619,6 +674,68 @@ label:has(input[type="file"]):focus-within {
   max-height: min(90dvh, 48rem);
   overflow-y: auto;
   overscroll-behavior: contain;
+}
+
+.bank-chart-reset-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .55rem .8rem;
+  margin-top: .75rem;
+}
+
+.bank-chart-reset-actions p {
+  flex: 1 1 15rem;
+  min-width: 0;
+  color: var(--text-muted);
+  font-size: .7rem;
+  line-height: 1.45;
+}
+
+.bank-chart-reset-btn,
+.bank-chart-reset-cancel,
+.bank-chart-reset-confirm {
+  min-height: 2.75rem;
+  border: 1px solid rgba(148, 163, 184, .24);
+  border-radius: var(--radius-sm);
+  padding: .5rem .8rem;
+  font-size: .75rem;
+  font-weight: 600;
+  transition: color .16s ease, background-color .16s ease, border-color .16s ease;
+}
+
+.bank-chart-reset-btn,
+.bank-chart-reset-cancel {
+  background: rgba(51, 65, 85, .42);
+  color: var(--text-secondary);
+}
+
+.bank-chart-reset-btn:hover,
+.bank-chart-reset-cancel:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+}
+
+.bank-chart-reset-dialog {
+  max-height: min(90vh, 48rem);
+  max-height: min(90dvh, 48rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: #172235;
+  box-shadow: var(--shadow-popover);
+}
+
+.bank-chart-reset-confirm {
+  flex: 1;
+  border-color: rgba(251, 113, 133, .32);
+  background: rgba(244, 63, 94, .12);
+  color: #fecdd3;
+}
+
+.bank-chart-reset-confirm:hover {
+  border-color: rgba(251, 113, 133, .55);
+  background: rgba(244, 63, 94, .2);
 }
 
 .goal-field-error {
@@ -760,6 +877,16 @@ nav .nav-btn span {
 
   #tab-goals .goals-summary {
     padding: 1.1rem;
+  }
+
+  #goalsList > .goal-card--compact {
+    padding: .8rem;
+  }
+
+  #goalsList .goal-card--compact .goal-title-row,
+  #goalsList .goal-card--compact .goal-summary-row {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .achievement-card {

@@ -209,6 +209,10 @@
         <span id="bankTrend" class="text-11px font-semibold text-slate-400"></span>
       </div>
       <div id="bankChart"></div>
+      <div class="bank-chart-reset-actions">
+        <button type="button" id="resetBankHistoryBtn" class="bank-chart-reset-btn">Reimposta storico saldo</button>
+        <p>Cancella solo la linea storica del grafico. Non cancella saldo corrente, movimenti, Pocket, obiettivi o backup.</p>
+      </div>
     </div>
 
     <div class="glass rounded-2xl p-4 shadow-lg">
@@ -405,6 +409,17 @@
     <div class="flex gap-2 pt-2">
       <button type="button" onclick="closeResetModal()" class="w-1/2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-2.5 rounded-xl text-xs transition">Annulla</button>
       <button type="button" onclick="executeSundayReset()" class="w-1/2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold py-2.5 rounded-xl text-xs transition shadow-lg shadow-emerald-500/20">Conferma Reset</button>
+    </div>
+  </div>
+</div>
+
+<div id="bankChartResetModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4" aria-hidden="true">
+  <div class="glass bank-chart-reset-dialog w-full max-w-sm rounded-2xl p-5 border border-slate-700" role="dialog" aria-modal="true" aria-labelledby="bankChartResetTitle" aria-describedby="bankChartResetDescription" tabindex="-1">
+    <h2 id="bankChartResetTitle" class="text-base font-bold text-white">Reimpostare lo storico saldo?</h2>
+    <p id="bankChartResetDescription" class="text-sm text-slate-300 mt-2">La linea del grafico verrà ricreata a partire dal saldo attuale. Saldo corrente, movimenti, Pocket, obiettivi e backup non verranno cancellati.</p>
+    <div class="flex gap-2 mt-5">
+      <button type="button" id="cancelBankChartResetBtn" class="bank-chart-reset-cancel">Annulla</button>
+      <button type="button" id="confirmBankChartResetBtn" class="bank-chart-reset-confirm">Reimposta storico</button>
     </div>
   </div>
 </div>
