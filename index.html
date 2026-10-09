@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0f172a">
 <meta name="apple-mobile-web-app-title" content="MyLittleBudget">
-<meta name="app-shell-version" content="2">
+<meta name="app-shell-version" content="3">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
 <link rel="apple-touch-icon" href="./icons/icon-192.png">
@@ -369,7 +369,7 @@
           <option value="all">Tutti</option><option value="active">Attivi</option><option value="completed">Completati</option><option value="archived">Archiviati</option>
         </select>
       </div>
-      <div id="goalsList" class="goals-grid"></div>
+      <div id="goalsList" class="goals-grid" role="region" aria-labelledby="goalListHeading"></div>
     </section>
 
     <section class="glass rounded-2xl p-4" aria-labelledby="achievementsHeading">
@@ -384,7 +384,7 @@
         </select>
       </div>
       <p id="achievementAnnouncement" class="sr-only" aria-live="polite" aria-atomic="true"></p>
-      <div id="achievementsList" class="achievement-grid"></div>
+      <div id="achievementsList" class="achievement-grid" role="region" aria-labelledby="achievementsHeading"></div>
       <p class="text-10px text-slate-500 mt-3">Questi traguardi sono privati e restano nei dati locali e nei backup scelti da te. Le attività non tracciabili in modo affidabile non vengono simulate.</p>
     </section>
     <p id="goalsStatus" class="sr-only" aria-live="polite"></p>
@@ -519,6 +519,7 @@
   </div>
 </nav>
 
+<script src="swipe-navigation.js"></script>
 <script src="app.js"></script>
   <script src="drive-sync.js"></script>
 </body>

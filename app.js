@@ -960,71 +960,24 @@
     window.scrollTo(0, 0);
   }
 
-  var swipeState = null;
-
-  function isMobileSwipeViewport() {
-    if (!window.matchMedia) return false;
-    return window.matchMedia('(max-width: ' + MOBILE_SWIPE_MAX + 'px)').matches;
-  }
-
-  function ignoreSwipeTarget(target) {
-    if (!target || !(target instanceof Element)) return false;
-    if (target.closest('input, textarea, select, button, a, label, [contenteditable], [role="dialog"], [aria-modal="true"], [data-tab], nav, [role="menu"], [data-menu-open="true"], [data-overlay-open="true"]')) return true;
-    if (target.closest('svg, canvas, [data-chart], .chart, .goal-dialog, .overflow-x-auto, [class*="overflow-x"], [style*="overflow-x"], [role="progressbar"], [draggable], [aria-grabbed="true"], [data-drag], [data-gesture], .goal-card, .goal-next-card, .goal-progress-track, #goalsList, #nextGoalContent')) return true;
-    if (target.closest('#resetModal, #bankChartResetModal, #categoryLimitsModal, #goalModal, #goalOperationModal')) return true;
-    return false;
-  }
-
   function getActiveTabId() {
     var active = document.querySelector('main > [id^="tab-"]:not(.hidden)');
     return active ? active.id.replace(/^tab-/, '') : TABS[0];
   }
 
-  var swipeTouchPointers = {};
-
-  function handleSwipeStart(event) {
-    if (event.pointerType !== 'touch') return;
-    var pointerId = String(event.pointerId);
-    swipeTouchPointers[pointerId] = true;
-    if (!isMobileSwipeViewport() || event.isPrimary === false ||
-        Object.keys(swipeTouchPointers).length !== 1 || ignoreSwipeTarget(event.target)) {
-      swipeState = null;
-      return;
-    }
-    swipeState = { pointerId: pointerId, x: event.clientX, y: event.clientY, tab: getActiveTabId() };
-  }
-
-  function handleSwipeEnd(event) {
-    if (event.pointerType !== 'touch') return;
-    var pointerId = String(event.pointerId);
-    var isSinglePointer = swipeState && swipeState.pointerId === pointerId &&
-      event.isPrimary !== false && Object.keys(swipeTouchPointers).length === 1;
-    delete swipeTouchPointers[pointerId];
-    if (!isSinglePointer) {
-      swipeState = null;
-      return;
-    }
-    var dx = event.clientX - swipeState.x;
-    var dy = event.clientY - swipeState.y;
-    var currentIndex = TABS.indexOf(swipeState.tab);
-    if (Math.abs(dx) < 72 || Math.abs(dx) < Math.abs(dy) * 1.5 || currentIndex < 0) {
-      swipeState = null;
-      return;
-    }
-    if (dx < 0 && currentIndex < TABS.length - 1) switchTab(TABS[currentIndex + 1]);
-    else if (dx > 0 && currentIndex > 0) switchTab(TABS[currentIndex - 1]);
-    swipeState = null;
-  }
-
-  function handleSwipeCancel(event) {
-    if (event.pointerType === 'touch') delete swipeTouchPointers[String(event.pointerId)];
-    swipeState = null;
-  }
-
   function attachSwipeNavigation() {
-    document.addEventListener('pointerdown', handleSwipeStart, { passive: true });
-    document.addEventListener('pointerup', handleSwipeEnd, { passive: true });
-    document.addEventListener('pointercancel', handleSwipeCancel, { passive: true });
+    var swipeSurface = document.querySelector('main');
+    if (!swipeSurface) throw new Error('Contenitore principale non trovato per la navigazione swipe.');
+    if (!window.SwipeNavigation) throw new Error('Modulo navigazione swipe non caricato.');
+    window.SwipeNavigation.create({
+      document: document,
+      window: window,
+      surface: swipeSurface,
+      maxWidth: MOBILE_SWIPE_MAX,
+      tabs: TABS,
+      getActiveTabId: getActiveTabId,
+      switchTab: switchTab
+    }).attach();
   }
 
   function selectCategory(cat) {
