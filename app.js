@@ -1951,17 +1951,23 @@
     var total = goalSavedTotal(appData);
     var accumulated = Number(appData.accumulatedSavingsFromLeftovers) || 0;
     var active = appData.goals.filter(function (goal) { return goal.status === 'active'; });
+    var hasGoals = appData.goals.length > 0;
     byId('goalsTotalSaved').textContent = eur(total);
     byId('goalsActiveCount').textContent = String(active.length);
     byId('goalsUnallocated').textContent = eur(Math.max(0, accumulated - total));
     byId('goalsAllocationNotice').classList.toggle('hidden', total <= accumulated);
-    renderNextGoal();
+    byId('goalsEmptyState').classList.toggle('hidden', hasGoals);
+    byId('addGoalBtn').classList.toggle('hidden', !hasGoals);
+    byId('nextGoalSection').classList.toggle('hidden', !hasGoals);
+    byId('goalListSection').classList.toggle('hidden', !hasGoals);
+    if (hasGoals) renderNextGoal();
+    else byId('nextGoalContent').innerHTML = '';
 
     var goals = appData.goals.filter(function (goal) { return goalStatusFilter === 'all' || goal.status === goalStatusFilter; });
     var list = byId('goalsList');
     list.innerHTML = goals.length
       ? goals.map(renderGoalCard).join('')
-      : '<p class="goal-empty">' + (appData.goals.length ? 'Nessun obiettivo corrisponde a questo filtro.' : 'Non hai ancora creato obiettivi. La pianificazione è facoltativa.') + '</p>';
+      : (hasGoals ? '<p class="goal-empty">Nessun obiettivo corrisponde a questo filtro.</p>' : '');
 
     var unlocked = appData.achievementState.unlocked;
     var unlockedCount = ACHIEVEMENTS.filter(function (item) {
@@ -2828,6 +2834,20 @@
     }
   }
 
+  function initializeDisclosureControls() {
+    document.querySelectorAll('[data-disclosure-toggle]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        var panel = byId(button.getAttribute('aria-controls'));
+        if (!panel) throw new Error('Pannello comprimibile non trovato: ' + button.getAttribute('aria-controls'));
+        var expanded = button.getAttribute('aria-expanded') !== 'true';
+        panel.classList.toggle('hidden', !expanded);
+        button.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        var label = button.getAttribute(expanded ? 'data-disclosure-expanded' : 'data-disclosure-collapsed');
+        if (label) button.textContent = label;
+      });
+    });
+  }
+
   window.openResetModal = openResetModal;
   window.closeResetModal = closeResetModal;
   window.executeSundayReset = executeSundayReset;
@@ -2845,6 +2865,7 @@
   window.toggleLedger = toggleLedger;
 
   function init() {
+    initializeDisclosureControls();
     document.querySelectorAll('.nav-btn').forEach(function (b) {
       b.addEventListener('click', function () { switchTab(b.getAttribute('data-tab')); });
     });

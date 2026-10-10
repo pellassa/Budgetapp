@@ -138,7 +138,6 @@
           <button type="button" data-cat="Altro" class="cat-btn"><i class="fa-solid fa-ellipsis text-sm"></i><span class="text-10px font-medium">Altro</span></button>
         </div>
         <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-slate-950 font-bold py-2.5 rounded-xl text-sm transition shadow-lg shadow-emerald-500/10 flex items-center justify-center gap-2"><i class="fa-solid fa-check"></i> Registra Spesa</button>
-        <p class="text-10px text-slate-500 text-center">La spesa viene sottratta automaticamente dal saldo del conto.</p>
       </form>
     </div>
 
@@ -189,16 +188,22 @@
     </div>
 
     <div class="glass rounded-2xl p-4 shadow-lg">
-      <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2"><i class="fa-solid fa-chart-pie text-emerald-400"></i> Come si divide lo stipendio</h3>
-      <div class="flex items-center gap-4">
-        <div class="relative w-32 h-32 shrink-0">
-          <svg viewBox="0 0 100 100" class="w-32 h-32 -rotate-90" id="donutSvg"></svg>
-          <div class="absolute inset-0 flex flex-col items-center justify-center">
-            <span id="donutCenterValue" class="text-sm font-black text-white">0%</span>
-            <span class="text-10px text-slate-400">risparmio</span>
+      <h3 class="mb-3">
+        <button type="button" id="salaryCompositionToggle" data-disclosure-toggle aria-expanded="false" aria-controls="salaryCompositionDetails" class="w-full flex items-center gap-2 text-left text-xs font-bold text-slate-300 uppercase tracking-wider rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400">
+          <i class="fa-solid fa-chart-pie text-emerald-400" aria-hidden="true"></i> Composizione dello stipendio
+        </button>
+      </h3>
+      <div id="salaryCompositionDetails" class="hidden">
+        <div class="flex items-center gap-4">
+          <div class="relative w-32 h-32 shrink-0">
+            <svg viewBox="0 0 100 100" class="w-32 h-32 -rotate-90" id="donutSvg"></svg>
+            <div class="absolute inset-0 flex flex-col items-center justify-center">
+              <span id="donutCenterValue" class="text-sm font-black text-white">0%</span>
+              <span class="text-10px text-slate-400">risparmio</span>
+            </div>
           </div>
+          <div id="donutLegend" class="space-y-1.5 text-11px flex-1"></div>
         </div>
-        <div id="donutLegend" class="space-y-1.5 text-11px flex-1"></div>
       </div>
     </div>
 
@@ -246,7 +251,7 @@
     <div class="glass rounded-2xl p-5 shadow-lg">
       <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2"><i class="fa-solid fa-building-columns text-sky-400 mr-1"></i> Saldo Attuale Conto Corrente</label>
       <input type="number" id="bankBalanceInput" step="0.01" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-4 py-3 text-2xl font-black text-white focus:outline-none focus:border-sky-500">
-      <p class="text-10px text-slate-500 mt-2 leading-snug">Come l'app della banca: pocket, spese fisse, extra e stipendio si registrano da soli. Se il saldo non coincide con quello reale, correggilo qui sopra: la differenza viene salvata come "Correzione".</p>
+      <p class="text-10px text-slate-500 mt-2 leading-snug">Pocket e movimenti programmati aggiornano il conto. Se il saldo differisce dalla banca, correggilo qui.</p>
       <div class="grid grid-cols-2 gap-2 mt-3">
         <button type="button" onclick="addBankMovement(1)" class="bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 font-semibold py-2 rounded-xl text-xs transition"><i class="fa-solid fa-arrow-down mr-1"></i> Entrata</button>
         <button type="button" onclick="addBankMovement(-1)" class="bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 font-semibold py-2 rounded-xl text-xs transition"><i class="fa-solid fa-arrow-up mr-1"></i> Uscita</button>
@@ -279,6 +284,7 @@
   </div>
 
   <div id="tab-archive" class="hidden space-y-4">
+    <h2 class="text-11px font-bold text-slate-400 uppercase tracking-wider border-b border-slate-700/70 pb-2">Risparmi e settimane</h2>
     <div class="glass rounded-2xl p-5 shadow-lg border-l-4 border-l-emerald-500">
       <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Risparmi Accumulati da Leftover</p>
       <div class="flex items-baseline gap-2">
@@ -300,6 +306,7 @@
     </div>
 
     <div class="glass rounded-2xl p-4 shadow-lg">
+      <h2 class="text-11px font-bold text-slate-400 uppercase tracking-wider border-b border-slate-700/70 pb-2 mb-3">Aspetto</h2>
       <fieldset id="themePreference" class="theme-picker">
         <legend>Tema dell’app</legend>
         <div class="theme-picker-options">
@@ -320,6 +327,7 @@
           </label>
         </div>
       </fieldset>
+      <h2 class="text-11px font-bold text-slate-400 uppercase tracking-wider border-b border-slate-700/70 pb-2 mt-5 mb-3">Dati e backup</h2>
       <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-1 flex items-center gap-2"><i class="fa-solid fa-cloud-arrow-up text-sky-400"></i> Backup e trasferimento dati</h3>
       <p id="lastBackupText" class="text-10px text-slate-500 mb-3">Nessun backup eseguito.</p>
       <button type="button" onclick="shareBackup()" class="w-full bg-sky-500/20 hover:bg-sky-500/30 text-sky-200 border border-sky-500/40 font-semibold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-2"><i class="fa-solid fa-share-nodes"></i> Condividi backup (Drive, email, …)</button>
@@ -369,17 +377,20 @@
       <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-1 flex items-center gap-2"><i class="fa-solid fa-chart-simple text-sky-400"></i> Ultimi 6 mesi</h3>
       <p id="spendingTrendChartDescription" class="text-10px text-slate-500 mb-3">Totale delle uscite effettive per mese; le barre sono accompagnate dai valori.</p>
       <div id="spendingTrendChart" aria-describedby="spendingTrendChartDescription"></div>
-      <div class="overflow-x-auto mt-3">
-        <table class="w-full text-left text-xs">
-          <caption class="sr-only">Totali mensili delle uscite effettive negli ultimi sei mesi</caption>
-          <thead>
-            <tr class="border-b border-slate-700 text-slate-400">
-              <th scope="col" class="py-2 pr-3 font-semibold">Mese</th>
-              <th scope="col" class="py-2 text-right font-semibold">Uscite</th>
-            </tr>
-          </thead>
-          <tbody id="spendingTrendMonthsTable"></tbody>
-        </table>
+      <button type="button" id="spendingTrendValuesToggle" data-disclosure-toggle data-disclosure-collapsed="Mostra valori esatti (6 mesi)" data-disclosure-expanded="Nascondi valori esatti" aria-expanded="false" aria-controls="spendingTrendExactValues" class="mt-3 text-11px font-semibold text-sky-300 underline underline-offset-2 rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400">Mostra valori esatti (6 mesi)</button>
+      <div id="spendingTrendExactValues" class="hidden mt-2">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <caption class="sr-only">Totali mensili delle uscite effettive negli ultimi sei mesi</caption>
+            <thead>
+              <tr class="border-b border-slate-700 text-slate-400">
+                <th scope="col" class="py-2 pr-3 font-semibold">Mese</th>
+                <th scope="col" class="py-2 text-right font-semibold">Uscite</th>
+              </tr>
+            </thead>
+            <tbody id="spendingTrendMonthsTable"></tbody>
+          </table>
+        </div>
       </div>
       <div class="mt-4">
         <h4 class="text-11px font-bold text-slate-300 mb-2">Addebiti fissi ed extra registrati nel mese</h4>
@@ -426,7 +437,13 @@
       <p id="goalsAllocationNotice" class="hidden mt-3 text-xs text-slate-300" role="status">Hai allocato più del risparmio registrato</p>
     </section>
 
-    <section class="glass goal-next rounded-2xl p-4" aria-labelledby="nextGoalHeading">
+    <section id="goalsEmptyState" class="hidden glass goal-empty rounded-2xl p-5" aria-labelledby="goalsEmptyHeading">
+      <h3 id="goalsEmptyHeading" class="text-sm font-semibold text-slate-100">Inizia dai tuoi risparmi</h3>
+      <p class="text-xs text-slate-400 mt-2">Crea un obiettivo per organizzare i risparmi che hai già accantonato.</p>
+      <button type="button" data-add-goal class="mt-4 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-200 border border-emerald-500/30 font-semibold px-3 py-2 rounded-xl text-xs focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400">Crea il primo obiettivo</button>
+    </section>
+
+    <section id="nextGoalSection" class="glass goal-next rounded-2xl p-4" aria-labelledby="nextGoalHeading">
       <div class="flex items-center gap-2 mb-3">
         <i class="fa-solid fa-flag-checkered text-emerald-300" aria-hidden="true"></i>
         <h3 id="nextGoalHeading" class="text-sm font-semibold text-slate-100">Prossimo traguardo</h3>
@@ -434,7 +451,7 @@
       <div id="nextGoalContent"></div>
     </section>
 
-    <section class="glass rounded-2xl p-4" aria-labelledby="goalListHeading">
+    <section id="goalListSection" class="glass rounded-2xl p-4" aria-labelledby="goalListHeading">
       <div class="flex items-center justify-between gap-3 mb-3">
         <div>
           <h3 id="goalListHeading" class="text-sm font-semibold text-slate-100">I tuoi obiettivi</h3>
