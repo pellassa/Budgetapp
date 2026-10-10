@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0f172a">
 <meta name="apple-mobile-web-app-title" content="MyLittleBudget">
-<meta name="app-shell-version" content="3">
+<meta name="app-shell-version" content="4">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
 <link rel="apple-touch-icon" href="./icons/icon-192.png">
@@ -43,8 +43,8 @@
 
   <div id="appUpdateNotice" class="app-update-notice hidden mb-4 rounded-2xl p-3 bg-slate-800 border border-slate-700 flex items-center gap-3" role="status" aria-live="polite">
     <i class="fa-solid fa-arrow-rotate-right text-emerald-400" aria-hidden="true"></i>
-    <p class="text-11px text-slate-300 flex-1">È disponibile una nuova versione di MyLittleBudget.</p>
-    <button type="button" id="appUpdateButton" class="text-11px bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 border border-emerald-500/40 px-3 py-1.5 rounded-lg">Aggiorna</button>
+    <p class="text-11px text-slate-300 flex-1">È disponibile un aggiornamento. Ricarica</p>
+    <button type="button" id="appUpdateButton" class="text-11px bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 border border-emerald-500/40 px-3 py-1.5 rounded-lg">Ricarica</button>
   </div>
   <p id="dataStorageWarning" class="hidden mb-4 rounded-xl border border-slate-600 bg-slate-800 px-3 py-2 text-xs text-slate-200" role="alert"></p>
 
@@ -519,6 +519,7 @@
   </div>
 </nav>
 
+<script src="pwa-update.js"></script>
 <script src="swipe-navigation.js"></script>
 <script src="app.js"></script>
   <script src="drive-sync.js"></script>

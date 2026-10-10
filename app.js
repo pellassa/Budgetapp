@@ -2995,40 +2995,20 @@
   }
 
   function initServiceWorker() {
-    if (!navigator.serviceWorker) return;
-    var notice = byId('appUpdateNotice');
-    var updateButton = byId('appUpdateButton');
-    var registration = null;
-    var reloadAfterUpdate = false;
-
-    function showUpdateNotice() {
-      if (notice) notice.classList.remove('hidden');
+    if (!window.PwaUpdate) {
+      console.warn('Gestore aggiornamenti PWA non disponibile.');
+      return;
     }
-
-    navigator.serviceWorker.addEventListener('controllerchange', function () {
-      if (reloadAfterUpdate) window.location.reload();
-    });
-    navigator.serviceWorker.register('./sw.js', { scope: './' }).then(function (reg) {
-      registration = reg;
-      if (reg.active && reg.active.state === 'activated') recordAchievementEvent('serviceWorkerActive');
-      if (reg.waiting && navigator.serviceWorker.controller) showUpdateNotice();
-      reg.addEventListener('updatefound', function () {
-        var installing = reg.installing;
-        if (!installing) return;
-        installing.addEventListener('statechange', function () {
-          if (installing.state === 'installed' && navigator.serviceWorker.controller) showUpdateNotice();
-        });
-      });
-      if (updateButton) {
-        updateButton.addEventListener('click', function () {
-          if (!registration || !registration.waiting) return;
-          reloadAfterUpdate = true;
-          recordAchievementEvent('pwaUpdated');
-          registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-        });
+    window.PwaUpdate.initialize({
+      navigator: navigator,
+      window: window,
+      document: document,
+      onServiceWorkerActive: function () {
+        recordAchievementEvent('serviceWorkerActive');
+      },
+      onUpdateApplied: function () {
+        recordAchievementEvent('pwaUpdated');
       }
-    }).catch(function (err) {
-      console.warn('Service worker non disponibile; l’app continua in modalità normale.', err);
     });
   }
 
