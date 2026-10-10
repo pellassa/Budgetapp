@@ -8,8 +8,8 @@
   var activeTabTransitionCleanup = null;
   var CAT_ICONS = { 'Spesa': 'fa-cart-shopping', 'Benzina': 'fa-gas-pump', 'Caffè': 'fa-mug-hot', 'Svago': 'fa-utensils', 'Altro': 'fa-ellipsis' };
   var CATEGORIES = ['Spesa', 'Benzina', 'Caffè', 'Svago', 'Altro'];
-  var CAT_ON  = 'cat-btn active bg-emerald-500/20 border border-emerald-500/50 text-emerald-300 p-2 rounded-xl text-center flex flex-col items-center gap-1 transition';
-  var CAT_OFF = 'cat-btn bg-slate-800 border border-slate-700 text-slate-400 p-2 rounded-xl text-center flex flex-col items-center gap-1 transition';
+  var CAT_ON  = 'cat-btn active p-2 rounded-xl text-center flex flex-col items-center gap-1 transition';
+  var CAT_OFF = 'cat-btn p-2 rounded-xl text-center flex flex-col items-center gap-1 transition';
   var NAV_ON  = 'nav-btn active flex flex-col items-center py-1.5 px-2 rounded-xl text-emerald-400 transition';
   var NAV_OFF = 'nav-btn flex flex-col items-center py-1.5 px-2 rounded-xl text-slate-400 hover:text-slate-200 transition';
   var MAX_BANK_POINTS = 800;
@@ -845,7 +845,7 @@
     function Y(v) { return pt + (1 - (v - min) / (max - min)) * (H - pt - pb); }
 
     var first = vals[0], last = vals[n - 1];
-    var col = last >= first ? '#34d399' : '#fb7185';
+    var col = last >= first ? 'var(--chart-positive)' : 'var(--chart-negative)';
 
     var line = pts.map(function (p, i) { return (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(p.balance).toFixed(1); }).join(' ');
     var area = line + ' L' + X(n - 1).toFixed(1) + ' ' + (H - pb) + ' L' + X(0).toFixed(1) + ' ' + (H - pb) + ' Z';
@@ -854,7 +854,7 @@
     var iMin = vals.indexOf(vmin), iMax = vals.indexOf(vmax);
     function label(i, v, above) {
       var x = X(i), anchor = x < 60 ? 'start' : (x > W - 60 ? 'end' : 'middle');
-      return '<text x="' + x.toFixed(1) + '" y="' + (Y(v) + (above ? -6 : 12)).toFixed(1) + '" text-anchor="' + anchor + '" fill="#94a3b8" font-size="8">' + Math.round(v) + ' €</text>';
+      return '<text x="' + x.toFixed(1) + '" y="' + (Y(v) + (above ? -6 : 12)).toFixed(1) + '" text-anchor="' + anchor + '" fill="var(--chart-label)" font-size="8">' + Math.round(v) + ' €</text>';
     }
     var dots = pts.map(function (p, i) {
       return '<circle cx="' + X(i).toFixed(1) + '" cy="' + Y(p.balance).toFixed(1) + '" r="' + (i === n - 1 ? 3.5 : 1.8) + '" fill="' + col + '"></circle>';
@@ -863,12 +863,12 @@
     el.innerHTML =
       '<svg viewBox="0 0 ' + W + ' ' + H + '" class="w-full" style="height:auto">' +
         '<defs><linearGradient id="bankGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="' + col + '" stop-opacity="0.35"></stop><stop offset="100%" stop-color="' + col + '" stop-opacity="0"></stop></linearGradient></defs>' +
-        '<line x1="' + pl + '" y1="' + (H - pb) + '" x2="' + (W - pr) + '" y2="' + (H - pb) + '" stroke="#334155" stroke-width="0.6"></line>' +
+        '<line x1="' + pl + '" y1="' + (H - pb) + '" x2="' + (W - pr) + '" y2="' + (H - pb) + '" stroke="var(--chart-grid)" stroke-width="0.6"></line>' +
         '<path d="' + area + '" fill="url(#bankGrad)"></path>' +
         '<path d="' + line + '" fill="none" stroke="' + col + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></path>' +
         dots + label(iMax, vmax, true) + (iMin !== iMax ? label(iMin, vmin, false) : '') +
-        '<text x="' + pl + '" y="' + (H - 6) + '" fill="#64748b" font-size="8">' + fmtShort(pts[0].t) + '</text>' +
-        '<text x="' + (W - pr) + '" y="' + (H - 6) + '" text-anchor="end" fill="#64748b" font-size="8">' + fmtShort(pts[n - 1].t) + '</text>' +
+        '<text x="' + pl + '" y="' + (H - 6) + '" fill="var(--chart-label)" font-size="8">' + fmtShort(pts[0].t) + '</text>' +
+        '<text x="' + (W - pr) + '" y="' + (H - 6) + '" text-anchor="end" fill="var(--chart-label)" font-size="8">' + fmtShort(pts[n - 1].t) + '</text>' +
       '</svg>';
 
     var diff = round2(last - first);
@@ -1267,14 +1267,14 @@
   function renderDonut(income, fixed, pocket, extra, net) {
     var svg = byId('donutSvg'), legend = byId('donutLegend');
     var segs = [
-      { label: 'Spese fisse', val: fixed, color: '#38bdf8' },
-      { label: 'Pocket money', val: Math.max(0, pocket), color: '#fbbf24' },
-      { label: 'Extra', val: extra, color: '#fb7185' },
-      { label: 'Risparmio', val: Math.max(0, net), color: '#34d399' }
+      { label: 'Spese fisse', val: fixed, color: 'var(--chart-fixed)' },
+      { label: 'Pocket money', val: Math.max(0, pocket), color: 'var(--chart-pocket)' },
+      { label: 'Extra', val: extra, color: 'var(--chart-extra)' },
+      { label: 'Risparmio', val: Math.max(0, net), color: 'var(--chart-positive)' }
     ];
     var total = segs.reduce(function (a, s) { return a + s.val; }, 0);
     var r = 40, C = 2 * Math.PI * r, offset = 0;
-    var html = '<circle cx="50" cy="50" r="' + r + '" fill="none" stroke="#1e293b" stroke-width="14"></circle>';
+    var html = '<circle cx="50" cy="50" r="' + r + '" fill="none" stroke="var(--chart-track)" stroke-width="14"></circle>';
     if (total > 0) {
       segs.forEach(function (s) {
         if (s.val <= 0) return;

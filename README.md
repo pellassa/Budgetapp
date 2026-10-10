@@ -6,6 +6,8 @@ MyLittleBudget è una piccola applicazione per gestire Pocket, spese fisse ed ex
 
 I dati finanziari vengono salvati nel browser sul dispositivo, tramite l’archiviazione locale. I backup JSON sono creati e importati manualmente dall’utente; l’app può anche salvare o ripristinare un backup nella cartella privata dell’app su Google Drive, solo su richiesta.
 
+La preferenza visiva (Scuro, Chiaro o Twilight) è salvata separatamente nel browser con la chiave `mylittlebudget-theme` e non fa parte dei backup.
+
 Il backup JSON resta compatibile con il formato esistente ed è **leggibile e non cifrato**. Proteggilo come qualsiasi documento che contiene dati finanziari. La cifratura con password potrebbe essere valutata in futuro, ma non è attualmente disponibile. Non vengono inclusi dati demo o personali nel repository.
 
 Dopo un reset del solo grafico del conto, i backup includono il campo facoltativo `bankChartReset` (saldo di partenza e movimenti successivi al reset). I backup precedenti che non contengono il campo continuano a ricostruire il grafico da `bankHistory`; il contenitore e il protocollo del backup Google Drive restano invariati.

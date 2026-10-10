@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it" class="dark">
+<html lang="it" class="dark" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -9,6 +9,62 @@
 <meta name="theme-color" content="#0f172a">
 <meta name="apple-mobile-web-app-title" content="MyLittleBudget">
 <meta name="app-shell-version" content="4">
+<script id="theme-bootstrap">
+(function () {
+  'use strict';
+
+  var storageKey = 'mylittlebudget-theme';
+  var themes = ['dark', 'light', 'twilight'];
+  var activeTheme = 'dark';
+
+  function isTheme(value) {
+    return themes.indexOf(value) !== -1;
+  }
+
+  function applyTheme(theme, persist) {
+    if (!isTheme(theme)) return;
+    activeTheme = theme;
+    document.documentElement.setAttribute('data-theme', theme);
+
+    var themeColor = document.querySelector('meta[name="theme-color"]');
+    if (themeColor) {
+      themeColor.setAttribute('content', theme === 'light' ? '#e9eef3' : (theme === 'twilight' ? '#17192b' : '#0b1220'));
+    }
+
+    if (persist) {
+      try {
+        window.localStorage.setItem(storageKey, theme);
+      } catch (error) {
+        console.warn('Preferenza tema non salvata in questo browser.', error);
+      }
+    }
+  }
+
+  try {
+    var savedTheme = window.localStorage.getItem(storageKey);
+    if (isTheme(savedTheme)) activeTheme = savedTheme;
+  } catch (error) {
+    console.warn('Preferenza tema non disponibile in questo browser.', error);
+  }
+  applyTheme(activeTheme, false);
+
+  function initializeThemeControl() {
+    var options = document.querySelectorAll('input[name="app-theme"]');
+    Array.prototype.forEach.call(options, function (option) {
+      option.checked = option.value === activeTheme;
+      option.addEventListener('change', function () {
+        if (this.checked) applyTheme(this.value, true);
+      });
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeThemeControl, { once: true });
+  } else {
+    initializeThemeControl();
+  }
+})();
+</script>
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
 <link rel="apple-touch-icon" href="./icons/icon-192.png">
@@ -244,6 +300,26 @@
     </div>
 
     <div class="glass rounded-2xl p-4 shadow-lg">
+      <fieldset id="themePreference" class="theme-picker">
+        <legend>Tema dell’app</legend>
+        <div class="theme-picker-options">
+          <label class="theme-option" for="appThemeDark">
+            <input id="appThemeDark" type="radio" name="app-theme" value="dark">
+            <span class="theme-swatch theme-swatch-dark" aria-hidden="true"></span>
+            <span>Scuro</span>
+          </label>
+          <label class="theme-option" for="appThemeLight">
+            <input id="appThemeLight" type="radio" name="app-theme" value="light">
+            <span class="theme-swatch theme-swatch-light" aria-hidden="true"></span>
+            <span>Chiaro</span>
+          </label>
+          <label class="theme-option" for="appThemeTwilight">
+            <input id="appThemeTwilight" type="radio" name="app-theme" value="twilight">
+            <span class="theme-swatch theme-swatch-twilight" aria-hidden="true"></span>
+            <span>Twilight</span>
+          </label>
+        </div>
+      </fieldset>
       <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-1 flex items-center gap-2"><i class="fa-solid fa-cloud-arrow-up text-sky-400"></i> Backup e trasferimento dati</h3>
       <p id="lastBackupText" class="text-10px text-slate-500 mb-3">Nessun backup eseguito.</p>
       <button type="button" onclick="shareBackup()" class="w-full bg-sky-500/20 hover:bg-sky-500/30 text-sky-200 border border-sky-500/40 font-semibold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-2"><i class="fa-solid fa-share-nodes"></i> Condividi backup (Drive, email, …)</button>
