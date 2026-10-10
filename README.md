@@ -14,4 +14,6 @@ Dopo un reset del solo grafico del conto, i backup includono il campo facoltativ
 
 Apri MyLittleBudget in un browser compatibile tramite HTTPS (o localhost), poi scegli “Installa app” / “Aggiungi alla schermata Home” dal menu del browser. Una copia dell’interfaccia e dei file locali può essere disponibile offline dopo il primo caricamento; funzioni che dipendono da servizi online, come Google Drive e le librerie caricate da CDN, richiedono una connessione.
 
-Gli aggiornamenti della PWA vengono applicati solo dopo aver scelto “Aggiorna” nell’avviso mostrato dall’app.
+Gli aggiornamenti della PWA vengono applicati solo dopo aver scelto “Ricarica” nell’avviso mostrato dall’app.
+
+Per ogni pubblicazione di una nuova versione dell’app, incrementa `CACHE_VERSION` in `sw.js` (e mantieni allineato `app-shell-version` in `index.html`). Questo fa installare al browser un worker e una cache shell nuovi; le richieste HTML e degli asset shell sono network-first, con fallback alla copia precache quando il dispositivo è offline. L’aggiornamento resta in attesa finché l’utente non sceglie “Ricarica”.

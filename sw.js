@@ -1,13 +1,15 @@
 'use strict';
 
-var CACHE_VERSION = 'mylittlebudget-shell-v2';
+var CACHE_VERSION = 'mylittlebudget-shell-v4';
 var CACHE_PREFIX = 'mylittlebudget-shell-';
 var SHELL_ASSETS = [
   './',
   './index.html',
   './app.js',
+  './pwa-update.js',
   './app.css',
   './desktop-layout.css',
+  './swipe-navigation.js',
   './drive-sync.js',
   './manifest.webmanifest',
   './icons/icon-192.png',
@@ -17,11 +19,21 @@ var SHELL_URLS = SHELL_ASSETS.map(function (path) {
   return new URL(path, self.registration.scope).href;
 });
 var INDEX_URL = new URL('./index.html', self.registration.scope).href;
-var APP_VERSION_MARKER = '<meta name="app-shell-version" content="2">';
+
+function offlineResponse(request) {
+  var isNavigation = request.mode === 'navigate';
+  return new Response(isNavigation ? 'MyLittleBudget non è disponibile offline.' : '', {
+    status: 503,
+    statusText: 'Service Unavailable',
+    headers: { 'Content-Type': isNavigation ? 'text/html; charset=utf-8' : 'text/plain; charset=utf-8' }
+  });
+}
 
 self.addEventListener('install', function (event) {
   event.waitUntil(caches.open(CACHE_VERSION).then(function (cache) {
-    return cache.addAll(SHELL_URLS);
+    return cache.addAll(SHELL_URLS.map(function (url) {
+      return new Request(url, { cache: 'reload' });
+    }));
   }));
 });
 
@@ -47,34 +59,48 @@ self.addEventListener('fetch', function (event) {
   if (request.method !== 'GET' || requestUrl.origin !== self.location.origin) return;
 
   if (request.mode === 'navigate') {
-    event.respondWith(fetch(request).then(function (response) {
-      if (!response.ok) throw new Error('Navigation request failed');
-      return response.clone().text().then(function (html) {
-        if (html.indexOf(APP_VERSION_MARKER) < 0) {
-          return caches.open(CACHE_VERSION).then(function (cache) {
-            return cache.match(INDEX_URL).then(function (cached) { return cached || response; });
-          });
-        }
-        return caches.open(CACHE_VERSION).then(function (cache) {
-          cache.put(INDEX_URL, response.clone());
+    event.respondWith(caches.open(CACHE_VERSION).then(function (cache) {
+      function findOfflineDocument(response) {
+        return cache.match(request).then(function (cached) {
+          return cached || cache.match(INDEX_URL);
+        }).then(function (cached) {
+          return cached || response || offlineResponse(request);
+        });
+      }
+
+      return fetch(request).then(function (response) {
+        if (!response.ok) return findOfflineDocument(response);
+        return Promise.all([
+          cache.put(INDEX_URL, response.clone()),
+          cache.put(request, response.clone())
+        ]).then(function () {
+          return response;
+        }, function (error) {
+          console.warn('Impossibile aggiornare la cache HTML della PWA.', error);
           return response;
         });
-      });
-    }).catch(function () {
-      return caches.open(CACHE_VERSION).then(function (cache) {
-        return cache.match(request).then(function (cached) { return cached || cache.match(INDEX_URL); });
-      });
+      }, function () { return findOfflineDocument(null); });
     }));
     return;
   }
 
   if (SHELL_URLS.indexOf(requestUrl.href) < 0) return;
   event.respondWith(caches.open(CACHE_VERSION).then(function (cache) {
-    return cache.match(request).then(function (cached) {
-      if (cached) return cached;
-      return fetch(request).then(function (response) {
-        if (response.ok) cache.put(request, response.clone());
+    return fetch(request).then(function (response) {
+      if (!response.ok) {
+        return cache.match(request).then(function (cached) {
+          return cached || response;
+        });
+      }
+      return cache.put(request, response.clone()).then(function () {
         return response;
+      }, function (error) {
+        console.warn('Impossibile aggiornare un asset nella cache della PWA.', error);
+        return response;
+      });
+    }, function () {
+      return cache.match(request).then(function (cached) {
+        return cached || offlineResponse(request);
       });
     });
   }));
