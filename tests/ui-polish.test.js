@@ -202,7 +202,7 @@ test('financial schema, normalization, and backup/import/export code are unchang
   [
     ['  function makeDefault() {', '\n  function normalizeGoal('],
     ['  function normalize(d) {', '\n  function loadData()'],
-    ['  function validateBackupData(data) {', '\n  function confirmFullReset()']
+    ['  function validateBackupData(data) {', '\n  function openResetModal()']
   ].forEach(function (range) {
     assert.equal(
       extractFunction(appSource, range[0], range[1]),
