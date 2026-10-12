@@ -2769,13 +2769,15 @@
   }
   function closeResetModal() { byId('resetModal').classList.add('hidden'); }
 
-  function executeSundayReset() {
-    var spent = sum(appData.currentWeek.expenses);
-    var budget = appData.currentWeek.initialBudget;
+  function archiveCurrentWeek() {
+    var week = appData.currentWeek;
+    if (appData.historicalWeeks.some(function (historical) { return historical.startDate === week.startDate; })) return false;
+    var spent = sum(week.expenses);
+    var budget = week.initialBudget;
     var left = round2(budget - spent);
     var activeLimits = CATEGORIES.filter(function (category) { return Number(appData.categoryLimits[category]) > 0; });
     var withinLimits = activeLimits.length > 0 && activeLimits.every(function (category) {
-      var categoryTotal = appData.currentWeek.expenses.reduce(function (total, expense) {
+      var categoryTotal = week.expenses.reduce(function (total, expense) {
         return expense.category === category ? total + (Number(expense.amount) || 0) : total;
       }, 0);
       return categoryTotal <= Number(appData.categoryLimits[category]);
@@ -2790,10 +2792,50 @@
     }
     appData.achievementState.targetChangedAt = null;
     appData.historicalWeeks.unshift({
-      startDate: appData.currentWeek.startDate, endDate: appData.currentWeek.endDate,
+      startDate: week.startDate, endDate: week.endDate,
       budget: round2(budget), spent: round2(spent), leftover: left, status: left >= 0 ? 'Risparmiati' : 'Sforato'
     });
     appData.accumulatedSavingsFromLeftovers = round2((parseFloat(appData.accumulatedSavingsFromLeftovers) || 0) + left);
+    return true;
+  }
+
+  function rolloverPocketWeek(now) {
+    var currentRange = thisWeekRange(now);
+    var savedStart = parseItDate(appData.currentWeek.startDate);
+    var currentStart = parseItDate(currentRange[0]);
+    if (!savedStart || !currentStart || savedStart.getTime() >= currentStart.getTime()) return false;
+
+    archiveCurrentWeek();
+    appData.currentWeek = {
+      startDate: currentRange[0], endDate: currentRange[1],
+      initialBudget: appData.weeklyTarget, expenses: []
+    };
+    return true;
+  }
+
+  function executeSundayReset() {
+    var now = new Date();
+    var currentStart = parseItDate(thisWeekRange(now)[0]);
+    var savedStart = parseItDate(appData.currentWeek.startDate);
+    if (!savedStart || !currentStart || savedStart.getTime() > currentStart.getTime()) {
+      closeResetModal();
+      return;
+    }
+    if (savedStart.getTime() < currentStart.getTime()) {
+      rolloverPocketWeek(now);
+      closeResetModal();
+      saveData();
+      return;
+    }
+    if (now.getDay() !== 0) {
+      closeResetModal();
+      alert('Il reset manuale è disponibile solo la domenica.');
+      return;
+    }
+    if (!archiveCurrentWeek()) {
+      closeResetModal();
+      return;
+    }
     var r = nextWeekRange();
     appData.currentWeek = { startDate: r[0], endDate: r[1], initialBudget: appData.weeklyTarget, expenses: [] };
     closeResetModal();
@@ -3002,14 +3044,21 @@
 
     if (typeof document.addEventListener === 'function') {
       document.addEventListener('visibilitychange', function () {
-        if (document.visibilityState === 'visible' && processRecurring()) saveData();
+        if (document.visibilityState === 'visible') {
+          var changed = rolloverPocketWeek();
+          if (processRecurring()) changed = true;
+          if (changed) saveData();
+        }
       });
     }
 
-    if (processRecurring()) {
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(appData)); } catch (e) {}
+    var changed = rolloverPocketWeek();
+    if (processRecurring()) changed = true;
+    if (changed) {
+      saveData();
+    } else {
+      renderAll();
     }
-    renderAll();
     var start = 'pocket';
     try { start = sessionStorage.getItem('activeTab') || 'pocket'; } catch (e) {}
     switchTab(start);
